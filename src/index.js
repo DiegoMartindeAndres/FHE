@@ -11,5 +11,8 @@ app.use(morgan('dev')); // Obtain HTTP requests sent to the server
 app.use(express.urlencoded({extended: false}));
 app.use(express.json()); // Server understands JSON format
 
+// Routes
+app.use('/api/he', require('./routes/index'));
+
 // Starting server
 app.listen(app.get('PORT'), () => {console.log(`Server on port ${app.get('PORT')}`)});

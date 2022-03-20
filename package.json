@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "node-gyp rebuild",
     "clean": "node-gyp clean",
-    "dev": "node src/index.js"
+    "dev": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -17,10 +17,12 @@
     "bindings": "~1.2.1",
     "express": "^4.17.3",
     "morgan": "^1.10.0",
-    "node-addon-api": "^1.7.2"
+    "node-addon-api": "^1.7.2",
+    "node-seal": "^5.0.0",
+    "underscore": "^1.13.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.15",
-    "node-gyp": "^3.7.0"
+    "node-gyp": "^3.7.0",
+    "nodemon": "^2.0.15"
   }
 }
