@@ -12,7 +12,7 @@ app.use(express.urlencoded({extended: false}));
 app.use(express.json()); // Server understands JSON format
 
 // Routes
-app.use('/api/he', require('./routes/index'));
+app.use('/api/sumhe', require('./routes/sum'));
 
 // Starting server
 app.listen(app.get('PORT'), () => {console.log(`Server on port ${app.get('PORT')}`)});

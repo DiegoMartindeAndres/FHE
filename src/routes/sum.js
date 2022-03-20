@@ -3,10 +3,10 @@ const router = Router();
 const _ = require('underscore');
 
 // Routes
-router.get('/', async (req, res) => {
+router.get('/', async (req, res) => { // http://localhost:3000/api/sumhe/?val1=2&val2=3
 
-    // Numbers
-    const val1 = 5, val2 = 7;
+    let val1 = req.query.val1;
+    let val2 = req.query.val2;
 
     // Require SEAL
     const SEAL = require('node-seal');
