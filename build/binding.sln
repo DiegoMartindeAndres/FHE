@@ -1,0 +1,51 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2015
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "calculate", "calculate.vcxproj", "{86245294-F8A5-4E89-5FC3-4F92D0BB7CDE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{32D307DF-06A2-FDE5-FAF2-CA78EC6A6C0B} = {32D307DF-06A2-FDE5-FAF2-CA78EC6A6C0B}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nothing", "..\node_modules\node-addon-api\src\nothing.vcxproj", "{32D307DF-06A2-FDE5-FAF2-CA78EC6A6C0B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(Users)", "..\Users", "{83FD2216-DE8C-3729-D4EA-3618B14F3F2D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(Usuario)", "..\Users\Usuario", "{E9FA5AB6-43B0-393C-1C09-ECCFC6DFB9E0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(APIs)", "..\Users\Usuario\APIs", "{430CCC6E-6721-5B7A-272B-0CAC5D88C8FE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(sealapi)", "..\Users\Usuario\APIs\sealapi", "{67A5FD0C-224A-B306-5593-5F7ACE879E39}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(node_modules)", "..\Users\Usuario\APIs\sealapi\node_modules", "{2B0F728E-94D5-A2C1-F4AB-32AF89948CDD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(node-addon-api)", "..\Users\Usuario\APIs\sealapi\node_modules\node-addon-api", "{C5DC3394-D663-0CD6-0B44-177FE922DB20}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "(src)", "..\Users\Usuario\APIs\sealapi\node_modules\node-addon-api\src", "{9691E9FF-221A-2121-F984-E0A98E5500DC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{32D307DF-06A2-FDE5-FAF2-CA78EC6A6C0B}.Debug|x64.ActiveCfg = Debug|x64
+		{32D307DF-06A2-FDE5-FAF2-CA78EC6A6C0B}.Debug|x64.Build.0 = Debug|x64
+		{32D307DF-06A2-FDE5-FAF2-CA78EC6A6C0B}.Release|x64.ActiveCfg = Release|x64
+		{32D307DF-06A2-FDE5-FAF2-CA78EC6A6C0B}.Release|x64.Build.0 = Release|x64
+		{86245294-F8A5-4E89-5FC3-4F92D0BB7CDE}.Debug|x64.ActiveCfg = Debug|x64
+		{86245294-F8A5-4E89-5FC3-4F92D0BB7CDE}.Debug|x64.Build.0 = Debug|x64
+		{86245294-F8A5-4E89-5FC3-4F92D0BB7CDE}.Release|x64.ActiveCfg = Release|x64
+		{86245294-F8A5-4E89-5FC3-4F92D0BB7CDE}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E9FA5AB6-43B0-393C-1C09-ECCFC6DFB9E0} = {83FD2216-DE8C-3729-D4EA-3618B14F3F2D}
+		{430CCC6E-6721-5B7A-272B-0CAC5D88C8FE} = {E9FA5AB6-43B0-393C-1C09-ECCFC6DFB9E0}
+		{67A5FD0C-224A-B306-5593-5F7ACE879E39} = {430CCC6E-6721-5B7A-272B-0CAC5D88C8FE}
+		{2B0F728E-94D5-A2C1-F4AB-32AF89948CDD} = {67A5FD0C-224A-B306-5593-5F7ACE879E39}
+		{C5DC3394-D663-0CD6-0B44-177FE922DB20} = {2B0F728E-94D5-A2C1-F4AB-32AF89948CDD}
+		{9691E9FF-221A-2121-F984-E0A98E5500DC} = {C5DC3394-D663-0CD6-0B44-177FE922DB20}
+		{32D307DF-06A2-FDE5-FAF2-CA78EC6A6C0B} = {9691E9FF-221A-2121-F984-E0A98E5500DC}
+	EndGlobalSection
+EndGlobal
