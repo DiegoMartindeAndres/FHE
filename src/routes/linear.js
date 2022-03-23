@@ -20,6 +20,23 @@ router.get('/', async (req, res) => { // http://localhost:3000/api/linear
 
 async function leastSquaresMethod(N, arrayX, arrayY) {
     /**************************************************
+     * CHECK VALIDITY OF VALUES TO BE COMPUTED
+     **************************************************/
+    if (arrayX.length != N ||
+        arrayY.length != N ||
+        N<0) {
+            throw new Error(
+                'Array lengths not valid.'
+            )
+    }
+
+    if (N>0 && N<2) {
+            throw new Error(
+                'At least length 2 of the arrays is needed.'
+            )
+    }
+
+    /**************************************************
      * SEAL PARAMETERS INITIALIZATION
      **************************************************/
     const SEAL = require('node-seal');
@@ -112,6 +129,17 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
         storeXValues[i] = cipherTextX;
     }
 
+    // Array of each encrypted value on the original Y array
+    // storeYValues[i] will have the encoded and encrypted form of trainData.ys[i]
+    let storeYValues = [];
+    for (let i=0; i<N; i++) {
+        const plainTextY = seal.PlainText();
+        const sealArrayY = Float64Array.from([trainData.ys[i]]);
+        encoder.encode(sealArrayY, scale, plainTextY);
+        const cipherTextY = encryptor.encryptSymmetric(plainTextY);
+        storeYValues[i] = cipherTextY;
+    }
+
     /**************************************************
      * COMPUTE Sx
      **************************************************/
@@ -125,9 +153,57 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     }
 
     // Check correctness of encryption
-    const decryptedPlainText = decryptor.decrypt(cipherTextSx);
-    const decodedArray = encoder.decode(decryptedPlainText);
-    console.log(`Sx: ${decodedArray[0]}`);
+    const decryptedPlainTextSx = decryptor.decrypt(cipherTextSx);
+    const decodedArraySx = encoder.decode(decryptedPlainTextSx);
+    console.log(`Sx: ${decodedArraySx[0]}`);
+
+    /**************************************************
+     * COMPUTE Sy
+     **************************************************/
+    var cipherTextSy = seal.CipherText();
+    cipherTextSy = encryptor.encryptSymmetric(auxPlaintext);
+    for (let i=0; i<N; i++) {
+        evaluator.add(storeYValues[i], cipherTextSy, cipherTextSy);
+    }
+
+    // Check correctness of encryption
+    const decryptedPlainTextSy = decryptor.decrypt(cipherTextSy);
+    const decodedArraySy = encoder.decode(decryptedPlainTextSy);
+    console.log(`Sy: ${decodedArraySy[0]}`);
+
+    /**************************************************
+     * COMPUTE Sxy
+     **************************************************/
+    var cipherTextSxy = seal.CipherText();
+    var cipherTextSxyaux = seal.CipherText();
+    var cipherTextSxyaux0 = seal.CipherText();
+    var cipherTextSxyaux1 = seal.CipherText();
+    cipherTextSxy = encryptor.encryptSymmetric(auxPlaintext);
+
+    let storeXYvalues = [];
+    evaluator.multiply(storeYValues[0], storeXValues[0], cipherTextSxyaux0);
+    evaluator.rescaleToNext(cipherTextSxyaux0);
+
+    evaluator.multiply(storeYValues[1], storeXValues[1], cipherTextSxyaux1);
+    evaluator.rescaleToNext(cipherTextSxyaux1);
+
+    evaluator.add(cipherTextSxyaux1, cipherTextSxyaux0, cipherTextSxyaux0);
+    cipherTextSxy = cipherTextSxyaux0;
+
+    for (let i=2; i<N; i++) {
+        evaluator.multiply(storeYValues[i], storeXValues[i], cipherTextSxyaux);
+        evaluator.rescaleToNext(cipherTextSxyaux);
+        storeXYvalues[i] = cipherTextSxyaux;
+    }
+
+    for (let i=2; i<N; i++) {
+        evaluator.add(storeXYvalues[i], cipherTextSxy, cipherTextSxy);
+    }
+
+    // Check correctness of encryption
+    const decryptedPlainTextSxy = decryptor.decrypt(cipherTextSxy);
+    const decodedArraySxy = encoder.decode(decryptedPlainTextSxy);
+    console.log(`Sxy: ${decodedArraySxy[0]}`);
 
     /**************************************************
      * LEAST SQUARES METHOD VARIABLES
@@ -143,7 +219,9 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     let Sxy = 0; // Sum of all the X*Y values
     for (let i=0; i<N; i++) {
         Sxy += trainData.xs[i]*trainData.ys[i];
+        console.log(`Real stored ${i}: ${Sxy}`);
     }
+    console.log(`Sxy no-fhe: ${Sxy}`);
     let Sxx = 0; // Sum of all the X^2 values
     for (let i=0; i<N; i++) {
         Sxx += Math.pow(trainData.xs[i], 2);
