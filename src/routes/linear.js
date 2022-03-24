@@ -48,8 +48,8 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     const schemeType = seal.SchemeType.ckks;
     const securityLevel = seal.SecurityLevel.tc128;
     const polyModulusDegree = 8192;
-    const bitSizes = [60, 40, 40, 60];
-    const bitSize = 40;
+    const bitSizes = [50, 30, 30, 30, 50];
+    const bitSize = 30;
     
     const parms = seal.EncryptionParameters(schemeType);
     
@@ -190,22 +190,22 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
 
     let storeXYvalues = [];
     evaluator.multiply(storeYValues[0], storeXValues[0], cipherTextSxyaux0);
-    evaluator.relinearize(cipherTextSxyaux0, relinKey);
-    evaluator.rescaleToNext(cipherTextSxyaux0);
+    const cipherTextSxyauxRelin0 = evaluator.relinearize(cipherTextSxyaux0, relinKey);
+    const cipherTextSxyauxRescale0 = evaluator.rescaleToNext(cipherTextSxyauxRelin0);
 
     evaluator.multiply(storeYValues[1], storeXValues[1], cipherTextSxyaux1);
-    evaluator.relinearize(cipherTextSxyaux1, relinKey);
-    evaluator.rescaleToNext(cipherTextSxyaux1);
+    const cipherTextSxyauxRelin1 = evaluator.relinearize(cipherTextSxyaux1, relinKey);
+    const cipherTextSxyauxRescale1 = evaluator.rescaleToNext(cipherTextSxyauxRelin1);
 
-    evaluator.add(cipherTextSxyaux1, cipherTextSxyaux0, cipherTextSxyaux0);
-    cipherTextSxy = cipherTextSxyaux0;
+    evaluator.add(cipherTextSxyauxRescale0, cipherTextSxyauxRescale1, cipherTextSxyauxRescale0);
+    cipherTextSxy = cipherTextSxyauxRescale0;
 
     for (let i=2; i<N; i++) {
         var cipherTextSxyaux = seal.CipherText();
         evaluator.multiply(storeYValues[i], storeXValues[i], cipherTextSxyaux);
-        evaluator.relinearize(cipherTextSxyaux, relinKey);
-        evaluator.rescaleToNext(cipherTextSxyaux);
-        storeXYvalues[i] = cipherTextSxyaux;
+        const cipherTextSxyauxRelin = evaluator.relinearize(cipherTextSxyaux, relinKey);
+        const cipherTextSxyauxRescale = evaluator.rescaleToNext(cipherTextSxyauxRelin);
+        storeXYvalues[i] = cipherTextSxyauxRescale;
     } 
 
     for (let i=2; i<N; i++) {
@@ -230,22 +230,22 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
 
     let storeXXvalues = [];
     evaluator.multiply(storeXValues[0], storeXValues[0], cipherTextSxxaux0);
-    evaluator.relinearize(cipherTextSxxaux0, relinKey);
-    evaluator.rescaleToNext(cipherTextSxxaux0);
+    const cipherTextSxxauxRelin0 = evaluator.relinearize(cipherTextSxxaux0, relinKey);
+    const cipherTextSxxauxRescale0 = evaluator.rescaleToNext(cipherTextSxxauxRelin0);
 
     evaluator.multiply(storeXValues[1], storeXValues[1], cipherTextSxxaux1);
-    evaluator.relinearize(cipherTextSxxaux1, relinKey);
-    evaluator.rescaleToNext(cipherTextSxxaux1);
+    const cipherTextSxxauxRelin1 = evaluator.relinearize(cipherTextSxxaux1, relinKey);
+    const cipherTextSxxauxRescale1 = evaluator.rescaleToNext(cipherTextSxxauxRelin1);
 
-    evaluator.add(cipherTextSxxaux1, cipherTextSxxaux0, cipherTextSxxaux0);
-    cipherTextSxx = cipherTextSxxaux0;
+    evaluator.add(cipherTextSxxauxRescale0, cipherTextSxxauxRescale1, cipherTextSxxauxRescale0);
+    cipherTextSxx = cipherTextSxxauxRescale0;
 
     for (let i=2; i<N; i++) {
         var cipherTextSxxaux = seal.CipherText();
         evaluator.multiply(storeXValues[i], storeXValues[i], cipherTextSxxaux);
-        evaluator.relinearize(cipherTextSxxaux, relinKey);
-        evaluator.rescaleToNext(cipherTextSxxaux);
-        storeXXvalues[i] = cipherTextSxxaux;
+        const cipherTextSxxauxRelin = evaluator.relinearize(cipherTextSxxaux, relinKey);
+        const cipherTextSxxauxRescale = evaluator.rescaleToNext(cipherTextSxxauxRelin);
+        storeXXvalues[i] = cipherTextSxxauxRescale;
     } 
 
     for (let i=2; i<N; i++) {
@@ -257,12 +257,12 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     const decodedArraySxx = encoder.decode(decryptedPlainTextSxx);
     console.log(`Sxx: ${decodedArraySxx[0]}`);
 
-/**************************************************
- * COMPUTE Syy
- * Syy = sum(y[i]*y[i])
- * The sum of all the products of the values in 
- * the Y array times themselves
- **************************************************/
+    /**************************************************
+     * COMPUTE Syy
+     * Syy = sum(y[i]*y[i])
+     * The sum of all the products of the values in 
+     * the Y array times themselves
+     **************************************************/
     var cipherTextSyy = seal.CipherText();
     var cipherTextSyyaux0 = seal.CipherText();
     var cipherTextSyyaux1 = seal.CipherText();
@@ -270,22 +270,22 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
 
     let storeYYvalues = [];
     evaluator.multiply(storeYValues[0], storeYValues[0], cipherTextSyyaux0);
-    evaluator.relinearize(cipherTextSyyaux0, relinKey);
-    evaluator.rescaleToNext(cipherTextSyyaux0);
+    const cipherTextSyyauxRelin0 = evaluator.relinearize(cipherTextSyyaux0, relinKey);
+    const cipherTextSyyauxRescale0 = evaluator.rescaleToNext(cipherTextSyyauxRelin0);
 
     evaluator.multiply(storeYValues[1], storeYValues[1], cipherTextSyyaux1);
-    evaluator.relinearize(cipherTextSyyaux1, relinKey);
-    evaluator.rescaleToNext(cipherTextSyyaux1);
+    const cipherTextSyyauxRelin1 = evaluator.relinearize(cipherTextSyyaux1, relinKey);
+    const cipherTextSyyauxRescale1 = evaluator.rescaleToNext(cipherTextSyyauxRelin1);
 
-    evaluator.add(cipherTextSyyaux1, cipherTextSyyaux0, cipherTextSyyaux0);
-    cipherTextSyy = cipherTextSyyaux0;
+    evaluator.add(cipherTextSyyauxRescale1, cipherTextSyyauxRescale0, cipherTextSyyauxRescale0);
+    cipherTextSyy = cipherTextSyyauxRescale0;
 
     for (let i=2; i<N; i++) {
-    var cipherTextSyyaux = seal.CipherText();
-    evaluator.multiply(storeYValues[i], storeYValues[i], cipherTextSyyaux);
-    evaluator.relinearize(cipherTextSyyaux, relinKey);
-    evaluator.rescaleToNext(cipherTextSyyaux);
-    storeYYvalues[i] = cipherTextSyyaux;
+        var cipherTextSyyaux = seal.CipherText();
+        evaluator.multiply(storeYValues[i], storeYValues[i], cipherTextSyyaux);
+        const cipherTextSyyauxRelin = evaluator.relinearize(cipherTextSyyaux, relinKey);
+        const cipherTextSyyauxRescale = evaluator.rescaleToNext(cipherTextSyyauxRelin);
+        storeYYvalues[i] = cipherTextSyyauxRescale;
     } 
 
     for (let i=2; i<N; i++) {
@@ -326,36 +326,31 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     const NArray = Float64Array.from([N]);
     encoder.encode(NArray, scale, NPlaintext);
 
-    console.log(`Scale Sxy: ${cipherTextSxy.scale}`);
-    console.log(`Scale N: ${NPlaintext.scale}`);
-
     // Compute rA = N*Sxy
+    NPlaintext.setScale(cipherTextSxy.scale);
+    const NPlaintextModSwitch = evaluator.plainModSwitchToNext(NPlaintext);
     let rA = seal.CipherText();
-    evaluator.multiplyPlain(cipherTextSxy, NPlaintext, rA);
-    evaluator.relinearize(rA, relinKey);
-    evaluator.rescaleToNext(rA);
+    evaluator.multiplyPlain(cipherTextSxy, NPlaintextModSwitch, rA);
+    const rARelin = evaluator.relinearize(rA, relinKey);
+    const rARescale = evaluator.rescaleToNext(rARelin);
 
     // Compute rB = Sx*Sy
     let rB = seal.CipherText();
     evaluator.multiply(cipherTextSx, cipherTextSy, rB);
-    evaluator.relinearize(rB, relinKey);
-    evaluator.rescaleToNext(rB);
+    const rBRelin = evaluator.relinearize(rB, relinKey);
+    const rBRescale = evaluator.rescaleToNext(rBRelin);
 
     // Compute rAB = rA - rB
     let rAB = seal.CipherText();
-    //rA.setScale(rB.scale);
-    console.log(`Scale A: ${rA.scale}`);
-    console.log(`Scale B: ${rB.scale}`);
-    console.log(`Scale AB: ${rAB.scale}`);
-    //evaluator.sub(rA, rB, rAB);
-
-
+    rBRescale.setScale(rARescale.scale);
+    const rBRescaleModSwitch = evaluator.cipherModSwitchTo(rBRescale, rARescale.parmsId);
+    evaluator.sub(rARescale, rBRescaleModSwitch, rAB);
 
 
     // Check correctness of encryption
-    const decryptedPlainTextPrueba = decryptor.decrypt(rA);
+    const decryptedPlainTextPrueba = decryptor.decrypt(rAB);
     const decodedArrayPrueba = encoder.decode(decryptedPlainTextPrueba);
-    console.log(`PRUEBA FHE: ${decodedArrayPrueba[0]}`);
+    console.log(`rAB: ${decodedArrayPrueba[0]}`);
 
     /**************************************************
      * COMPUTE SLOPE
