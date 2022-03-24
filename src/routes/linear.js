@@ -180,6 +180,8 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     /**************************************************
      * COMPUTE Sxy
      * Sxy = sum(x[i]*y[i])
+     * The sum of all the products of the values in 
+     * the X array times the ones in the Y array
      **************************************************/
     var cipherTextSxy = seal.CipherText();
     var cipherTextSxyaux0 = seal.CipherText();
@@ -218,78 +220,82 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     /**************************************************
      * COMPUTE Sxx
      * Sxx = sum(x[i]*x[i])
+     * The sum of all the products of the values in 
+     * the X array times themselves
      **************************************************/
-     var cipherTextSxx = seal.CipherText();
-     var cipherTextSxxaux0 = seal.CipherText();
-     var cipherTextSxxaux1 = seal.CipherText();
-     cipherTextSxx = encryptor.encryptSymmetric(auxPlaintext);
- 
-     let storeXXvalues = [];
-     evaluator.multiply(storeXValues[0], storeXValues[0], cipherTextSxxaux0);
-     evaluator.relinearize(cipherTextSxxaux0, relinKey);
-     evaluator.rescaleToNext(cipherTextSxxaux0);
- 
-     evaluator.multiply(storeXValues[1], storeXValues[1], cipherTextSxxaux1);
-     evaluator.relinearize(cipherTextSxxaux1, relinKey);
-     evaluator.rescaleToNext(cipherTextSxxaux1);
- 
-     evaluator.add(cipherTextSxxaux1, cipherTextSxxaux0, cipherTextSxxaux0);
-     cipherTextSxx = cipherTextSxxaux0;
- 
-     for (let i=2; i<N; i++) {
-         var cipherTextSxxaux = seal.CipherText();
-         evaluator.multiply(storeXValues[i], storeXValues[i], cipherTextSxxaux);
-         evaluator.relinearize(cipherTextSxxaux, relinKey);
-         evaluator.rescaleToNext(cipherTextSxxaux);
-         storeXXvalues[i] = cipherTextSxxaux;
-     } 
- 
-     for (let i=2; i<N; i++) {
-         evaluator.add(storeXXvalues[i], cipherTextSxx, cipherTextSxx);
-     }
- 
-     // Check correctness of encryption
-     const decryptedPlainTextSxx = decryptor.decrypt(cipherTextSxx);
-     const decodedArraySxx = encoder.decode(decryptedPlainTextSxx);
-     console.log(`Sxx: ${decodedArraySxx[0]}`);
+    var cipherTextSxx = seal.CipherText();
+    var cipherTextSxxaux0 = seal.CipherText();
+    var cipherTextSxxaux1 = seal.CipherText();
+    cipherTextSxx = encryptor.encryptSymmetric(auxPlaintext);
 
-    /**************************************************
-     * COMPUTE Syy
-     * Syy = sum(y[i]*y[i])
-     **************************************************/
-     var cipherTextSyy = seal.CipherText();
-     var cipherTextSyyaux0 = seal.CipherText();
-     var cipherTextSyyaux1 = seal.CipherText();
-     cipherTextSyy = encryptor.encryptSymmetric(auxPlaintext);
- 
-     let storeYYvalues = [];
-     evaluator.multiply(storeYValues[0], storeYValues[0], cipherTextSyyaux0);
-     evaluator.relinearize(cipherTextSyyaux0, relinKey);
-     evaluator.rescaleToNext(cipherTextSyyaux0);
- 
-     evaluator.multiply(storeYValues[1], storeYValues[1], cipherTextSyyaux1);
-     evaluator.relinearize(cipherTextSyyaux1, relinKey);
-     evaluator.rescaleToNext(cipherTextSyyaux1);
- 
-     evaluator.add(cipherTextSyyaux1, cipherTextSyyaux0, cipherTextSyyaux0);
-     cipherTextSyy = cipherTextSyyaux0;
- 
-     for (let i=2; i<N; i++) {
-         var cipherTextSyyaux = seal.CipherText();
-         evaluator.multiply(storeYValues[i], storeYValues[i], cipherTextSyyaux);
-         evaluator.relinearize(cipherTextSyyaux, relinKey);
-         evaluator.rescaleToNext(cipherTextSyyaux);
-         storeYYvalues[i] = cipherTextSyyaux;
-     } 
- 
-     for (let i=2; i<N; i++) {
-         evaluator.add(storeYYvalues[i], cipherTextSyy, cipherTextSyy);
-     }
- 
-     // Check correctness of encryption
-     const decryptedPlainTextSyy = decryptor.decrypt(cipherTextSyy);
-     const decodedArraySyy = encoder.decode(decryptedPlainTextSyy);
-     console.log(`Syy: ${decodedArraySyy[0]}`);
+    let storeXXvalues = [];
+    evaluator.multiply(storeXValues[0], storeXValues[0], cipherTextSxxaux0);
+    evaluator.relinearize(cipherTextSxxaux0, relinKey);
+    evaluator.rescaleToNext(cipherTextSxxaux0);
+
+    evaluator.multiply(storeXValues[1], storeXValues[1], cipherTextSxxaux1);
+    evaluator.relinearize(cipherTextSxxaux1, relinKey);
+    evaluator.rescaleToNext(cipherTextSxxaux1);
+
+    evaluator.add(cipherTextSxxaux1, cipherTextSxxaux0, cipherTextSxxaux0);
+    cipherTextSxx = cipherTextSxxaux0;
+
+    for (let i=2; i<N; i++) {
+        var cipherTextSxxaux = seal.CipherText();
+        evaluator.multiply(storeXValues[i], storeXValues[i], cipherTextSxxaux);
+        evaluator.relinearize(cipherTextSxxaux, relinKey);
+        evaluator.rescaleToNext(cipherTextSxxaux);
+        storeXXvalues[i] = cipherTextSxxaux;
+    } 
+
+    for (let i=2; i<N; i++) {
+        evaluator.add(storeXXvalues[i], cipherTextSxx, cipherTextSxx);
+    }
+
+    // Check correctness of encryption
+    const decryptedPlainTextSxx = decryptor.decrypt(cipherTextSxx);
+    const decodedArraySxx = encoder.decode(decryptedPlainTextSxx);
+    console.log(`Sxx: ${decodedArraySxx[0]}`);
+
+/**************************************************
+ * COMPUTE Syy
+ * Syy = sum(y[i]*y[i])
+ * The sum of all the products of the values in 
+ * the Y array times themselves
+ **************************************************/
+    var cipherTextSyy = seal.CipherText();
+    var cipherTextSyyaux0 = seal.CipherText();
+    var cipherTextSyyaux1 = seal.CipherText();
+    cipherTextSyy = encryptor.encryptSymmetric(auxPlaintext);
+
+    let storeYYvalues = [];
+    evaluator.multiply(storeYValues[0], storeYValues[0], cipherTextSyyaux0);
+    evaluator.relinearize(cipherTextSyyaux0, relinKey);
+    evaluator.rescaleToNext(cipherTextSyyaux0);
+
+    evaluator.multiply(storeYValues[1], storeYValues[1], cipherTextSyyaux1);
+    evaluator.relinearize(cipherTextSyyaux1, relinKey);
+    evaluator.rescaleToNext(cipherTextSyyaux1);
+
+    evaluator.add(cipherTextSyyaux1, cipherTextSyyaux0, cipherTextSyyaux0);
+    cipherTextSyy = cipherTextSyyaux0;
+
+    for (let i=2; i<N; i++) {
+    var cipherTextSyyaux = seal.CipherText();
+    evaluator.multiply(storeYValues[i], storeYValues[i], cipherTextSyyaux);
+    evaluator.relinearize(cipherTextSyyaux, relinKey);
+    evaluator.rescaleToNext(cipherTextSyyaux);
+    storeYYvalues[i] = cipherTextSyyaux;
+    } 
+
+    for (let i=2; i<N; i++) {
+    evaluator.add(storeYYvalues[i], cipherTextSyy, cipherTextSyy);
+    }
+
+    // Check correctness of encryption
+    const decryptedPlainTextSyy = decryptor.decrypt(cipherTextSyy);
+    const decodedArraySyy = encoder.decode(decryptedPlainTextSyy);
+    console.log(`Syy: ${decodedArraySyy[0]}`);
 
     /**************************************************
      * COMPUTE CORRELATION COEFFICIENT
@@ -297,7 +303,59 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
      *      *Math.sqrt(N*Syy-Sy*Sy))
      * If r is too low, linear regression is not a 
      * good option for this dataset
+     * 
+     * To compute it homomorphically lets rewrite
+     * the expression as follows:
+     * rA = N*Sxy
+     * rB = Sx*Sy
+     * rAB = rA - rB
+     * rC = N*Sxx
+     * rD = Sx*Sx
+     * rCD = rC - rD
+     * rE = rCD ^ 1/2
+     * rF = N*Syy
+     * rG = Sy*Sy
+     * rFG = rF - rG
+     * rH = rFG ^ 1/2
+     * rI = rE * rH
+     * rJ = rI ^ (-1)
+     * r = rAB*rJ
      **************************************************/
+    // Turn N into a PlainText
+    const NPlaintext = seal.PlainText();
+    const NArray = Float64Array.from([N]);
+    encoder.encode(NArray, scale, NPlaintext);
+
+    console.log(`Scale Sxy: ${cipherTextSxy.scale}`);
+    console.log(`Scale N: ${NPlaintext.scale}`);
+
+    // Compute rA = N*Sxy
+    let rA = seal.CipherText();
+    evaluator.multiplyPlain(cipherTextSxy, NPlaintext, rA);
+    evaluator.relinearize(rA, relinKey);
+    evaluator.rescaleToNext(rA);
+
+    // Compute rB = Sx*Sy
+    let rB = seal.CipherText();
+    evaluator.multiply(cipherTextSx, cipherTextSy, rB);
+    evaluator.relinearize(rB, relinKey);
+    evaluator.rescaleToNext(rB);
+
+    // Compute rAB = rA - rB
+    let rAB = seal.CipherText();
+    //rA.setScale(rB.scale);
+    console.log(`Scale A: ${rA.scale}`);
+    console.log(`Scale B: ${rB.scale}`);
+    console.log(`Scale AB: ${rAB.scale}`);
+    //evaluator.sub(rA, rB, rAB);
+
+
+
+
+    // Check correctness of encryption
+    const decryptedPlainTextPrueba = decryptor.decrypt(rA);
+    const decodedArrayPrueba = encoder.decode(decryptedPlainTextPrueba);
+    console.log(`PRUEBA FHE: ${decodedArrayPrueba[0]}`);
 
     /**************************************************
      * COMPUTE SLOPE
@@ -333,6 +391,7 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
      * If r is too low, linear regression is not a good option for this dataset
      **************************************************/
     let r = (N*Sxy-Sx*Sy)/(Math.sqrt(N*Sxx-Sx*Sx)*Math.sqrt(N*Syy-Sy*Sy));
+    console.log(`PUEBA: ${N*Sxy-Sx*Sy}`);
     console.log(`Linear correlation coefficient r: ${r}`);
 
     /**************************************************
