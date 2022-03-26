@@ -1,5 +1,10 @@
+# Lista de URLs para la API de Microsoft SEAL
 
-## POST URLs para la demo
+## GET URLs
+
+> http://localhost:3000/api/linear/
+
+## POST URLs
 
 ### Altura vs Peso
 
