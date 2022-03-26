@@ -1,0 +1,8 @@
+[
+    {
+        "id": 1,
+        "title": "Relación altura-peso",
+        "slope": 1.068,
+        "yaxis_cutpoint": -115.75
+    }
+]

@@ -2,20 +2,29 @@ const {Router} = require('express');
 const router = Router();
 const _ = require('underscore');
 
+const samples = require('../sample.json');
+
 // Routes
-router.get('/', async (req, res) => {
+/**
+ * GET
+ */
+router.get('/', (req, res) => {
+    res.json(samples);
+});
+
+/**
+ * POST
+ */
+router.post('/', async (req, res) => {
     /**************************************************
      * URL FORMAT
      * Obtained from the query
      * 
      * http://localhost:3000/api/linear/
-     * ?valuesX=x1,x2,x3&valuesY=y1,y2,y3
+     * ?valuesX=x1,x2,x3&valuesY=y1,y2,y3&futureX=fx
      * 
-     * Example:
-     * http://localhost:3000/api/linear/
-     * ?valuesX=1,2,3,5,6,8,9,10
-     * &valuesY=1.5,2,4,4.6,4.7,8.5,8.8,9
-     * &futureX=11
+     * Página 36 muchos ejemplos
+     * https://riucv.ucv.es/bitstream/handle/20.500.12466/1925/UTILIDAD%20DE%20LA%20REGRESI%C3%93N%20LINEAL%20M%C3%9ALTIPLE%20EN%20ESTUDIOS%20DE%20CIENCIAS%20DE%20LA%20SALUD.pdf?sequence=1&isAllowed=y
      **************************************************/
 
     /**************************************************
