@@ -3,22 +3,38 @@ const router = Router();
 const _ = require('underscore');
 
 // Routes
-router.get('/', async (req, res) => { // http://localhost:3000/api/linear
+router.get('/', async (req, res) => {
+    /**************************************************
+     * URL FORMAT
+     * Obtained from the query
+     * 
+     * http://localhost:3000/api/linear/
+     * ?valuesX=x1,x2,x3&valuesY=y1,y2,y3
+     * 
+     * Example:
+     * http://localhost:3000/api/linear/
+     * ?valuesX=1,2,3,5,6,8,9,10
+     * &valuesY=1.5,2,4,4.6,4.7,8.5,8.8,9
+     * &futureX=11
+     **************************************************/
 
     /**************************************************
      * DATA SET
+     * 
+     * Obtained from the query
      **************************************************/
-    const valuesX = [1, 2, 3, 5, 6, 8, 9, 10]; 
-    const valuesY = [1.5, 2, 4, 4.6, 4.7, 8.5, 8.8, 9];
+    const valuesX = req.query.valuesX.split(',');
+    const valuesY = req.query.valuesY.split(',');
+    const futureX = req.query.futureX;
 
     /**************************************************
      * COMPUTE PREDICTION
      **************************************************/
-    let prediction = await leastSquaresMethod(valuesX.length, valuesX, valuesY);
-    res.send(`Prediction: ${prediction}`);
+    let leastSqMethod = await leastSquaresMethod(valuesX.length, valuesX, valuesY, futureX);
+    res.json({slope: leastSqMethod[0], cut_point_y: leastSqMethod[1], prediction: leastSqMethod[2]});
 });
 
-async function leastSquaresMethod(N, arrayX, arrayY) {
+async function leastSquaresMethod(N, arrayX, arrayY, futureX) {
     /**************************************************
      * CHECK VALIDITY OF VALUES TO BE COMPUTED
      **************************************************/
@@ -333,18 +349,6 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     const mDRescaleModSwitch = evaluator.cipherModSwitchTo(mDRescale, mCRescale.parmsId);
     evaluator.sub(mCRescale, mDRescaleModSwitch, mCD);
 
-    // Compute mE = Dec(mAB / mCD)
-    // TODO: Move to another section of final computations for m and b and return in JSON
-    const decryptedPlainTextmAB = decryptor.decrypt(mAB);
-    const decodedArraymAB = encoder.decode(decryptedPlainTextmAB);
-    const decryptedPlainTextmCD = decryptor.decrypt(mCD);
-    const decodedArraymCD = encoder.decode(decryptedPlainTextmCD);
-
-    let mE = decodedArraymAB[0] / decodedArraymCD[0];
-
-    // Check correctness of encryption
-    console.log(`Slope m - FHE : ${mE}`);
-
     /**************************************************
      * COMPUTE CUT POINT Y AXIS
      * b = (Sy*Sxx-Sx*Sxy)/(N*Sxx-Sx*Sx)
@@ -363,71 +367,62 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
      * bCD = bC - bD = mCD
      * bE = bAB / bCD
      **************************************************/
+    // Rescaling and Mod Switching to adapt to Sxx and Sxy
+    cipherTextSy.setScale(cipherTextSxx.scale);
+    cipherTextSx.setScale(cipherTextSxy.scale);
+    const cipherTextSyRescaleModSwitch = evaluator.cipherModSwitchTo(cipherTextSy, cipherTextSxx.parmsId);
+    const cipherTextSxRescaleModSwitch = evaluator.cipherModSwitchTo(cipherTextSx, cipherTextSxy.parmsId);
+    // Compute bA = Sy*Sxx
+    let bA = seal.CipherText();
+    evaluator.multiply(cipherTextSyRescaleModSwitch, cipherTextSxx, bA);
+    const bARelin = evaluator.relinearize(bA, relinKey);
+    const bARescale = evaluator.rescaleToNext(bARelin);
+
+    // Compute bB = Sx*Sxy
+    let bB = seal.CipherText();
+    evaluator.multiply(cipherTextSxRescaleModSwitch, cipherTextSxy, bB);
+    const bBRelin = evaluator.relinearize(bB, relinKey);
+    const bBRescale = evaluator.rescaleToNext(bBRelin);
+
+    // Compute bAB = bA - bB
+    let bAB = seal.CipherText();
+    evaluator.sub(bARescale, bBRescale, bAB);
 
     /**************************************************
-     * LEAST SQUARES METHOD VARIABLES
+     * FINAL COMPUTATIONS WITH CLEAR DATA
+     * 
+     * Calculate the slope and the cut point in the
+     * Y axis with clear data to be returned to the 
+     * user.
      **************************************************/
-    let Sx = 0; // Sum of all the X values
-    for (let i=0; i<N; i++) {
-        Sx += trainData.xs[i];
-    }
-    let Sy = 0; // Sum of all the Y values
-    for (let i=0; i<N; i++) {
-        Sy += trainData.ys[i];
-    }
-    let Sxy = 0; // Sum of all the X*Y values
-    for (let i=0; i<N; i++) {
-        Sxy += trainData.xs[i]*trainData.ys[i];
-    }
-    let Sxx = 0; // Sum of all the X^2 values
-    for (let i=0; i<N; i++) {
-        Sxx += Math.pow(trainData.xs[i], 2);
-    }
-    let Syy = 0; // Sum of all the Y^2 values
-    for (let i=0; i<N; i++) {
-        Syy += Math.pow(trainData.ys[i], 2);
-    }
+    // Compute mE = Dec(mAB / mCD)
+    const decryptedPlainTextmAB = decryptor.decrypt(mAB);
+    const decodedArraymAB = encoder.decode(decryptedPlainTextmAB);
+    const decryptedPlainTextmCD = decryptor.decrypt(mCD);
+    const decodedArraymCD = encoder.decode(decryptedPlainTextmCD);
 
-    /**************************************************
-     * LINEAR CORRELATION COEFFICIENT
-     * If r is too low, linear regression is not a good option for this dataset
-     **************************************************/
-    /* let r = (N*Sxy-Sx*Sy)/(Math.sqrt(N*Sxx-Sx*Sx)*Math.sqrt(N*Syy-Sy*Sy));
-    console.log(`Linear correlation coefficient r: ${r}`); */
+    let m = decodedArraymAB[0] / decodedArraymCD[0];
 
-    /**************************************************
-     * SLOPE
-     **************************************************/
-    let m = (N*Sxy-Sx*Sy)/(N*Sxx-Sx*Sx);
-    console.log(`Slope m - NO FHE: ${m}`);
+    // Compute bE = Dec(bAB / mCD)
+    const decryptedPlainTextbAB = decryptor.decrypt(bAB);
+    const decodedArraybAB = encoder.decode(decryptedPlainTextbAB);
 
-    /**************************************************
-     * CUT POINT Y AXIS
-     **************************************************/
-    let b = (Sy*Sxx-Sx*Sxy)/(N*Sxx-Sx*Sx);
+    let b = decodedArraybAB[0] / decodedArraymCD[0];
 
-    /**************************************************
-     * ERRORS
-     **************************************************/
-    /* let beta_sq = 0;
-    for (let i=0; i<N; i++) {
-        beta_sq += Math.pow(b + m*trainData.xs[i] - trainData.ys[i], 2);
-    }
-
-    let e_m = Math.sqrt((N/(N*Sxx-Sx*Sx))*(beta_sq/(N-2)));
-    console.log(`Slope error: ${e_m}`);
-
-    let e_b = Math.sqrt((Sxx/(N*Sxx-Sx*Sx))*(beta_sq/(N-2)));
-    console.log(`Y axis cut point error: ${e_b}`); */
+    // Check correctness of encryption
+    console.log(`Slope m - FHE : ${m}`);
+    console.log(`Cut point b - FHE : ${b}`);
 
     /**************************************************
      * FINAL PREDICTION EQUATION
      * y = mx + b
-     * y = (m +- e_m)x + (b +- e_b)
      **************************************************/
-    let x = 11;
-    let prediction = m*x + b;
-    return prediction;
+    let prediction = m*futureX + b;
+
+    /**************************************************
+     * RETURN SLOPE, CUT POINT AND PREDICTION
+     **************************************************/
+    return [m, b, prediction];
 }
 
 /**************************************************
