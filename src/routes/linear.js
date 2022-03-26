@@ -111,8 +111,8 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
      * Sxy = sum(x[i]*y[i])
      * Sxx = sum(x[i]*x[i])
      * Syy = sum(y[i]*y[i])
-     * r = (N*Sxy-Sx*Sy)/(Math.sqrt(N*Sxx-Sx*Sx)*Math.sqrt(N*Syy-Sy*Sy))
      * m = (N*Sxy-Sx*Sy)/(N*Sxx-Sx*Sx)
+     * b = (Sy*Sxx-Sx*Sxy)/(N*Sxx-Sx*Sx)
      **************************************************/
 
     /**************************************************
@@ -156,11 +156,6 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
         evaluator.add(storeXValues[i], cipherTextSx, cipherTextSx);
     }
 
-    // Check correctness of encryption
-    const decryptedPlainTextSx = decryptor.decrypt(cipherTextSx);
-    const decodedArraySx = encoder.decode(decryptedPlainTextSx);
-    console.log(`Sx: ${decodedArraySx[0]}`);
-
     /**************************************************
      * COMPUTE Sy
      * Sy = sum(y[i])
@@ -171,11 +166,6 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     for (let i=0; i<N; i++) {
         evaluator.add(storeYValues[i], cipherTextSy, cipherTextSy);
     }
-
-    // Check correctness of encryption
-    const decryptedPlainTextSy = decryptor.decrypt(cipherTextSy);
-    const decodedArraySy = encoder.decode(decryptedPlainTextSy);
-    console.log(`Sy: ${decodedArraySy[0]}`);
 
     /**************************************************
      * COMPUTE Sxy
@@ -212,11 +202,6 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
         evaluator.add(storeXYvalues[i], cipherTextSxy, cipherTextSxy);
     }
 
-    // Check correctness of encryption
-    const decryptedPlainTextSxy = decryptor.decrypt(cipherTextSxy);
-    const decodedArraySxy = encoder.decode(decryptedPlainTextSxy);
-    console.log(`Sxy: ${decodedArraySxy[0]}`);
-
     /**************************************************
      * COMPUTE Sxx
      * Sxx = sum(x[i]*x[i])
@@ -251,11 +236,6 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     for (let i=2; i<N; i++) {
         evaluator.add(storeXXvalues[i], cipherTextSxx, cipherTextSxx);
     }
-
-    // Check correctness of encryption
-    const decryptedPlainTextSxx = decryptor.decrypt(cipherTextSxx);
-    const decodedArraySxx = encoder.decode(decryptedPlainTextSxx);
-    console.log(`Sxx: ${decodedArraySxx[0]}`);
 
     /**************************************************
      * COMPUTE Syy
@@ -292,69 +272,96 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     evaluator.add(storeYYvalues[i], cipherTextSyy, cipherTextSyy);
     }
 
-    // Check correctness of encryption
-    const decryptedPlainTextSyy = decryptor.decrypt(cipherTextSyy);
-    const decodedArraySyy = encoder.decode(decryptedPlainTextSyy);
-    console.log(`Syy: ${decodedArraySyy[0]}`);
-
     /**************************************************
-     * COMPUTE CORRELATION COEFFICIENT
-     * r = (N*Sxy-Sx*Sy)/(Math.sqrt(N*Sxx-Sx*Sx)
-     *      *Math.sqrt(N*Syy-Sy*Sy))
-     * If r is too low, linear regression is not a 
-     * good option for this dataset
+     * COMPUTE SLOPE
+     * m = (N*Sxy-Sx*Sy)/(N*Sxx-Sx*Sx)
+     * 
+     * Final division will be computed on clear data,
+     * as it will be given back to the user in that
+     * format.
      * 
      * To compute it homomorphically lets rewrite
      * the expression as follows:
-     * rA = N*Sxy
-     * rB = Sx*Sy
-     * rAB = rA - rB
-     * rC = N*Sxx
-     * rD = Sx*Sx
-     * rCD = rC - rD
-     * rE = rCD ^ 1/2
-     * rF = N*Syy
-     * rG = Sy*Sy
-     * rFG = rF - rG
-     * rH = rFG ^ 1/2
-     * rI = rE * rH
-     * rJ = rI ^ (-1)
-     * r = rAB*rJ
+     * mA = N*Sxy
+     * mB = Sx*Sy
+     * mAB = mA - mB
+     * mC = N*Sxx
+     * mD = Sx*Sx
+     * mCD = mC - mD
+     * mE = mAB / mCD
      **************************************************/
     // Turn N into a PlainText
     const NPlaintext = seal.PlainText();
     const NArray = Float64Array.from([N]);
     encoder.encode(NArray, scale, NPlaintext);
 
-    // Compute rA = N*Sxy
+    // Compute mA = N*Sxy
     NPlaintext.setScale(cipherTextSxy.scale);
     const NPlaintextModSwitch = evaluator.plainModSwitchToNext(NPlaintext);
-    let rA = seal.CipherText();
-    evaluator.multiplyPlain(cipherTextSxy, NPlaintextModSwitch, rA);
-    const rARelin = evaluator.relinearize(rA, relinKey);
-    const rARescale = evaluator.rescaleToNext(rARelin);
+    let mA = seal.CipherText();
+    evaluator.multiplyPlain(cipherTextSxy, NPlaintextModSwitch, mA);
+    const mARelin = evaluator.relinearize(mA, relinKey);
+    const mARescale = evaluator.rescaleToNext(mARelin);
 
     // Compute rB = Sx*Sy
-    let rB = seal.CipherText();
-    evaluator.multiply(cipherTextSx, cipherTextSy, rB);
-    const rBRelin = evaluator.relinearize(rB, relinKey);
-    const rBRescale = evaluator.rescaleToNext(rBRelin);
+    let mB = seal.CipherText();
+    evaluator.multiply(cipherTextSx, cipherTextSy, mB);
+    const mBRelin = evaluator.relinearize(mB, relinKey);
+    const mBRescale = evaluator.rescaleToNext(mBRelin);
 
-    // Compute rAB = rA - rB
-    let rAB = seal.CipherText();
-    rBRescale.setScale(rARescale.scale);
-    const rBRescaleModSwitch = evaluator.cipherModSwitchTo(rBRescale, rARescale.parmsId);
-    evaluator.sub(rARescale, rBRescaleModSwitch, rAB);
+    // Compute mAB = mA - mB
+    let mAB = seal.CipherText();
+    mBRescale.setScale(mARescale.scale);
+    const mBRescaleModSwitch = evaluator.cipherModSwitchTo(mBRescale, mARescale.parmsId);
+    evaluator.sub(mARescale, mBRescaleModSwitch, mAB);
 
+    // Compute rC = N*Sxx
+    let mC = seal.CipherText();
+    evaluator.multiplyPlain(cipherTextSxx, NPlaintextModSwitch, mC);
+    const mCRelin = evaluator.relinearize(mC, relinKey);
+    const mCRescale = evaluator.rescaleToNext(mCRelin);
+
+    // Compute mD = Sx*Sx
+    let mD = seal.CipherText();
+    evaluator.multiply(cipherTextSx, cipherTextSx, mD);
+    const mDRelin = evaluator.relinearize(mD, relinKey);
+    const mDRescale = evaluator.rescaleToNext(mDRelin);
+
+    // Compute mCD = mC - mD
+    let mCD = seal.CipherText();
+    mDRescale.setScale(mCRescale.scale);
+    const mDRescaleModSwitch = evaluator.cipherModSwitchTo(mDRescale, mCRescale.parmsId);
+    evaluator.sub(mCRescale, mDRescaleModSwitch, mCD);
+
+    // Compute mE = Dec(mAB / mCD)
+    // TODO: Move to another section of final computations for m and b and return in JSON
+    const decryptedPlainTextmAB = decryptor.decrypt(mAB);
+    const decodedArraymAB = encoder.decode(decryptedPlainTextmAB);
+    const decryptedPlainTextmCD = decryptor.decrypt(mCD);
+    const decodedArraymCD = encoder.decode(decryptedPlainTextmCD);
+
+    let mE = decodedArraymAB[0] / decodedArraymCD[0];
 
     // Check correctness of encryption
-    const decryptedPlainTextPrueba = decryptor.decrypt(rAB);
-    const decodedArrayPrueba = encoder.decode(decryptedPlainTextPrueba);
-    console.log(`rAB: ${decodedArrayPrueba[0]}`);
+    console.log(`Slope m - FHE : ${mE}`);
 
     /**************************************************
-     * COMPUTE SLOPE
-     * m = (N*Sxy-Sx*Sy)/(N*Sxx-Sx*Sx)
+     * COMPUTE CUT POINT Y AXIS
+     * b = (Sy*Sxx-Sx*Sxy)/(N*Sxx-Sx*Sx)
+     * 
+     * Final division will be computed on clear data,
+     * as it will be given back to the user in that
+     * format.
+     * 
+     * To compute it homomorphically lets rewrite
+     * the expression as follows:
+     * bA = Sy*Sxx
+     * bB = Sx*Sxy
+     * bAB = bA - bB
+     * bC = N*Sxx = mC
+     * bD = Sx*Sx = mD
+     * bCD = bC - bD = mCD
+     * bE = bAB / bCD
      **************************************************/
 
     /**************************************************
@@ -385,14 +392,14 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
      * LINEAR CORRELATION COEFFICIENT
      * If r is too low, linear regression is not a good option for this dataset
      **************************************************/
-    let r = (N*Sxy-Sx*Sy)/(Math.sqrt(N*Sxx-Sx*Sx)*Math.sqrt(N*Syy-Sy*Sy));
-    console.log(`PUEBA: ${N*Sxy-Sx*Sy}`);
-    console.log(`Linear correlation coefficient r: ${r}`);
+    /* let r = (N*Sxy-Sx*Sy)/(Math.sqrt(N*Sxx-Sx*Sx)*Math.sqrt(N*Syy-Sy*Sy));
+    console.log(`Linear correlation coefficient r: ${r}`); */
 
     /**************************************************
      * SLOPE
      **************************************************/
     let m = (N*Sxy-Sx*Sy)/(N*Sxx-Sx*Sx);
+    console.log(`Slope m - NO FHE: ${m}`);
 
     /**************************************************
      * CUT POINT Y AXIS
@@ -402,7 +409,7 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     /**************************************************
      * ERRORS
      **************************************************/
-    let beta_sq = 0;
+    /* let beta_sq = 0;
     for (let i=0; i<N; i++) {
         beta_sq += Math.pow(b + m*trainData.xs[i] - trainData.ys[i], 2);
     }
@@ -411,7 +418,7 @@ async function leastSquaresMethod(N, arrayX, arrayY) {
     console.log(`Slope error: ${e_m}`);
 
     let e_b = Math.sqrt((Sxx/(N*Sxx-Sx*Sx))*(beta_sq/(N-2)));
-    console.log(`Y axis cut point error: ${e_b}`);
+    console.log(`Y axis cut point error: ${e_b}`); */
 
     /**************************************************
      * FINAL PREDICTION EQUATION

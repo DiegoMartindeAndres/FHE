@@ -51,6 +51,7 @@ router.get('/', async (req, res) => { // http://localhost:3000/api/sumbfv/?val1=
     const keyGenerator = seal.KeyGenerator(context);
     const publicKey = keyGenerator.createPublicKey();
     const secretKey = keyGenerator.secretKey();
+    const relinKey = keyGenerator.createRelinKeys();
     const encryptor = seal.Encryptor(context, publicKey);
     const decryptor = seal.Decryptor(context, secretKey);
     const evaluator = seal.Evaluator(context);
