@@ -2,20 +2,29 @@ const {Router} = require('express');
 const router = Router();
 const _ = require('underscore');
 
-// Routes
-router.get('/', async (req, res) => {
+const samples = require('../sample.json');
+
+/**************************************************
+ * ROUTES
+ **************************************************/
+
+/**
+ * GET
+ */
+router.get('/', (_req, res) => {
+    res.json(samples);
+});
+
+/**
+ * POST
+ */
+router.post('/', async (req, res) => {
     /**************************************************
      * URL FORMAT
      * Obtained from the query
      * 
-     * http://localhost:3000/api/linear/
-     * ?valuesX=x1,x2,x3&valuesY=y1,y2,y3
-     * 
-     * Example:
-     * http://localhost:3000/api/linear/
-     * ?valuesX=1,2,3,5,6,8,9,10
-     * &valuesY=1.5,2,4,4.6,4.7,8.5,8.8,9
-     * &futureX=11
+     * http://localhost:3000/api/parms-linear/
+     * ?valuesX=x1,x2,x3&valuesY=y1,y2,y3&title=graph
      **************************************************/
 
     /**************************************************
@@ -25,16 +34,43 @@ router.get('/', async (req, res) => {
      **************************************************/
     const valuesX = req.query.valuesX.split(',');
     const valuesY = req.query.valuesY.split(',');
-    const futureX = req.query.futureX;
+    const title = req.query.title;
 
     /**************************************************
-     * COMPUTE PREDICTION
+     * COMPUTE EQUATION PARAMETERS
      **************************************************/
-    let leastSqMethod = await leastSquaresMethod(valuesX.length, valuesX, valuesY, futureX);
-    res.json({slope: leastSqMethod[0], cut_point_y: leastSqMethod[1], prediction: leastSqMethod[2]});
+    let leastSqMethod = await leastSquaresMethod(valuesX.length, valuesX, valuesY);
+    let m = leastSqMethod[0];
+    let b = leastSqMethod[1];
+
+    let existed = false;
+
+    if (title && m && b) {
+        _.each(samples, (sample, _index) => {
+            if (sample.title == title) {
+                existed = true;
+            }
+        });
+    } else if (!title) {
+        res.status(500).json({error: "Title unavailable."});
+    } else if (!m) {
+        res.status(500).json({error: "The slope could not be computed."});
+    } else {
+        res.status(500).json({error: "The cut point on the Y axis could not be computed."});
+    }
+
+    if (!existed) {
+        const id = samples.length + 1;
+        const newSample = {id, title, slope: m, yaxis_cutpoint: b};
+        samples.push(newSample);
+        res.json(samples);
+    } else {
+        res.status(500).json({error: "That title is already in use in the database."});
+    }
+
 });
 
-async function leastSquaresMethod(N, arrayX, arrayY, futureX) {
+async function leastSquaresMethod(N, arrayX, arrayY) {
     /**************************************************
      * CHECK VALIDITY OF VALUES TO BE COMPUTED
      **************************************************/
@@ -285,7 +321,7 @@ async function leastSquaresMethod(N, arrayX, arrayY, futureX) {
     } 
 
     for (let i=2; i<N; i++) {
-    evaluator.add(storeYYvalues[i], cipherTextSyy, cipherTextSyy);
+        evaluator.add(storeYYvalues[i], cipherTextSyy, cipherTextSyy);
     }
 
     /**************************************************
@@ -409,20 +445,10 @@ async function leastSquaresMethod(N, arrayX, arrayY, futureX) {
 
     let b = decodedArraybAB[0] / decodedArraymCD[0];
 
-    // Check correctness of encryption
-    console.log(`Slope m - FHE : ${m}`);
-    console.log(`Cut point b - FHE : ${b}`);
-
-    /**************************************************
-     * FINAL PREDICTION EQUATION
-     * y = mx + b
-     **************************************************/
-    let prediction = m*futureX + b;
-
     /**************************************************
      * RETURN SLOPE, CUT POINT AND PREDICTION
      **************************************************/
-    return [m, b, prediction];
+    return [m, b];
 }
 
 /**************************************************
