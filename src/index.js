@@ -14,7 +14,8 @@ app.use(express.json()); // Server understands JSON format
 // Routes
 app.use('/api/sumbfv', require('./routes/sumbfv.js'));
 app.use('/api/sumckks', require('./routes/sumckks.js'));
-app.use('/api/linear', require('./routes/linear.js'));
+app.use('/api/parms-linear', require('./routes/parmsLinear.js'));
+app.use('/api/compute-linear', require('./routes/computeLinear.js'));
 
 // Starting server -> npm run dev
 app.listen(app.get('PORT'), () => {console.log(`Server on port ${app.get('PORT')}`)});
