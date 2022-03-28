@@ -59,6 +59,8 @@ router.get('/', async (req, res) => {
     const plainTextA = encoder.encode(arrayA);
     const cipherTextA = encryptor.encrypt(plainTextA);
     const cipherTextABase64 = cipherTextA.save();
+
+    console.log(JSON.stringify(cipherTextABase64).length);
     
     
     axios.post("http://localhost:3000/api/operate", {

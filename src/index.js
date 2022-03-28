@@ -11,8 +11,10 @@ app.set('json spaces', 2); // JSON format
 app.use(morgan('dev')); // Obtain HTTP requests sent to the server
 app.use(express.urlencoded({extended: false}));
 app.use(express.json()); // Server understands JSON format
-app.use(bodyParser.json({limit: "10000kb"}));
-app.use(bodyParser.urlencoded({limit: "10000kb", extended: true}));
+app.use(bodyParser.json({limit: '1000mb', extended: true}));
+app.use(bodyParser.urlencoded({limit: '1000mb', extended: true}));
+app.use(express.json({limit: '1000mb'}));
+app.use(express.urlencoded({limit: '1000mb'}));
 
 // Routes
 app.use('/api/sumbfv', require('./routes/sumbfv.js'));
