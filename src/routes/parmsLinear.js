@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
     const title = req.query.title;
 
     /**************************************************
-     * COMPUTE EQUATION PARAMETERS
+     * UPDATE DATABASE GIVEN A TITLE
      **************************************************/
     if (title && valuesX && valuesY) {
         _.each(samples, async (sample, _index) => {
@@ -109,15 +109,52 @@ router.post('/', async (req, res) => {
                     sample.slope = m;
                     sample.yaxis_cutpoint = b;
                 }
+            } else {
+                res.status(500).json({error: "The title doesn't match any other on the database."});
             }
         });
         res.json(samples);
     } else if (!title) {
-        res.status(500).json({error: "The title doesn't match any other on the database."});
+        res.status(500).json({error: "Title unavailable."});
     } else {
         res.status(500).json({error: "Arrays unavailable."});
     }
+});
 
+/**
+ * DELETE 
+ */
+ router.delete('/', (req, res) => {
+     /**************************************************
+     * URL FORMAT
+     * Obtained from the query
+     * 
+     * http://localhost:3000/api/parms-linear/
+     * ?title=graph
+     **************************************************/
+
+    /**************************************************
+     * DATA SET
+     * 
+     * Obtained from the query
+     **************************************************/
+    const title = req.query.title;
+
+    /**************************************************
+     * DELETE FROM DATABASE GIVEN A TITLE
+     **************************************************/
+    if (title) {
+        _.each(samples, async (sample, index) => {
+            if (sample.title == title) {
+                samples.splice(index, 1);
+            } else {
+                res.status(500).json({error: "The title doesn't match any other on the database."});
+            }
+        });
+        res.json(samples);
+    } else {
+        res.status(500).json({error: "Title unavailable."});
+    }
 });
 
 async function leastSquaresMethod(N, arrayX, arrayY) {

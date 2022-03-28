@@ -16,6 +16,7 @@ app.use('/api/sumbfv', require('./routes/sumbfv.js'));
 app.use('/api/sumckks', require('./routes/sumckks.js'));
 app.use('/api/parms-linear', require('./routes/parmsLinear.js'));
 app.use('/api/compute-linear', require('./routes/computeLinear.js'));
+app.use('/api/string', require('./routes/string.js'));
 
 // Starting server -> npm run dev
 app.listen(app.get('PORT'), () => {console.log(`Server on port ${app.get('PORT')}`)});
