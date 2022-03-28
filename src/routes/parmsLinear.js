@@ -70,6 +70,56 @@ router.post('/', async (req, res) => {
 
 });
 
+/**
+ * PUT
+ */
+ router.put('/', async (req, res) => {
+    /**************************************************
+     * URL FORMAT
+     * Obtained from the query
+     * 
+     * http://localhost:3000/api/parms-linear/
+     * ?valuesX=x1,x2,x3&valuesY=y1,y2,y3&title=graph
+     **************************************************/
+
+    /**************************************************
+     * DATA SET
+     * 
+     * Obtained from the query
+     **************************************************/
+    const valuesX = req.query.valuesX.split(',');
+    const valuesY = req.query.valuesY.split(',');
+    const title = req.query.title;
+
+    /**************************************************
+     * COMPUTE EQUATION PARAMETERS
+     **************************************************/
+    if (title && valuesX && valuesY) {
+        _.each(samples, async (sample, _index) => {
+            if (sample.title == title) {
+                let leastSqMethod = await leastSquaresMethod(valuesX.length, valuesX, valuesY);
+                let m = leastSqMethod[0];
+                let b = leastSqMethod[1];
+                if (!m) {
+                    res.status(500).json({error: "The slope could not be computed."});
+                } else if (!b) {
+                    res.status(500).json({error: "The cut point on the Y axis could not be computed."});
+                } else {
+                    sample.title = title;
+                    sample.slope = m;
+                    sample.yaxis_cutpoint = b;
+                }
+            }
+        });
+        res.json(samples);
+    } else if (!title) {
+        res.status(500).json({error: "The title doesn't match any other on the database."});
+    } else {
+        res.status(500).json({error: "Arrays unavailable."});
+    }
+
+});
+
 async function leastSquaresMethod(N, arrayX, arrayY) {
     /**************************************************
      * CHECK VALIDITY OF VALUES TO BE COMPUTED
