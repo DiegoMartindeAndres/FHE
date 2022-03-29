@@ -11,7 +11,7 @@ const samples = require('../sample.json');
 /**
  * GET
  */
- router.get('/', (req, res) => {
+ router.get('/', async (req, res) => {
      /**************************************************
      * URL FORMAT
      * Obtained from the query
@@ -32,14 +32,17 @@ const samples = require('../sample.json');
      * FUNCTION TO COMPUTE PREDICTION
      **************************************************/
     var predicted = 0;
+    var slope = 0;
+    var yaxis_cutpoint = 0;
 
-    let found = false;
+    var found = false;
 
     if (title && predict) {
         if (samples.length != 0) {
-            _.each(samples, async (sample, _index) => {
+            _.each(samples, (sample, _index) => {
                 if (sample.title == title) {
-                    predicted = await computePrediction(predict, sample.slope, sample.yaxis_cutpoint);
+                    slope = sample.slope;
+                    yaxis_cutpoint = sample.yaxis_cutpoint;
                     found = true;
                 }
             });
@@ -50,9 +53,10 @@ const samples = require('../sample.json');
         res.status(500).json({error: "Title and X value for prediction are required."});
     }
 
-    if (!found) {
+    if (found == false) {
         res.status(500).json({error: "Title does not match any other on the database."});
     } else {
+        predicted = await computePrediction(predict, slope, yaxis_cutpoint);
         res.json({titulo: title, height: predict, weight: predicted});
     }
 });

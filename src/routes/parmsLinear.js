@@ -94,24 +94,14 @@ router.post('/', async (req, res) => {
     /**************************************************
      * UPDATE DATABASE GIVEN A TITLE
      **************************************************/
-    let found = false;
+    var found = false;
+    var index = 0;
 
     if (title && valuesX && valuesY) {
-        _.each(samples, async (sample, _index) => {
+        _.each(samples, (sample, i) => {
             if (sample.title == title) {
-                let leastSqMethod = await leastSquaresMethod(valuesX.length, valuesX, valuesY);
-                let m = leastSqMethod[0];
-                let b = leastSqMethod[1];
-                if (!m) {
-                    res.status(500).json({error: "The slope could not be computed."});
-                } else if (!b) {
-                    res.status(500).json({error: "The cut point on the Y axis could not be computed."});
-                } else {
-                    sample.title = title;
-                    sample.slope = m;
-                    sample.yaxis_cutpoint = b;
-                    found = true;
-                }
+                index = i;
+                found = true;
             }
         });
     } else if (!title) {
@@ -120,10 +110,22 @@ router.post('/', async (req, res) => {
         res.status(500).json({error: "Arrays unavailable."});
     }
 
-    if (!found) {
+    if (found == false) {
         res.status(500).json({error: "Title does not match any other on the database."});
     } else {
-        res.json(samples);
+        let leastSqMethod = await leastSquaresMethod(valuesX.length, valuesX, valuesY);
+        let m = leastSqMethod[0];
+        let b = leastSqMethod[1];
+        if (!m) {
+            res.status(500).json({error: "The slope could not be computed."});
+        } else if (!b) {
+            res.status(500).json({error: "The cut point on the Y axis could not be computed."});
+        } else {
+            samples[index].title = title;
+            samples[index].slope = m;
+            samples[index].yaxis_cutpoint = b;
+            res.json(samples);
+        }
     }
 });
 
@@ -149,8 +151,8 @@ router.post('/', async (req, res) => {
     /**************************************************
      * DELETE FROM DATABASE GIVEN A TITLE
      **************************************************/
-    let found = false;
-    let index = 0;
+    var found = false;
+    var index = 0;
 
     if (title) {
         _.each(samples, async (sample, i) => {
@@ -163,7 +165,7 @@ router.post('/', async (req, res) => {
         res.status(500).json({error: "Title unavailable."});
     }
 
-    if (!found) {
+    if (found == false) {
         res.status(500).json({error: "Title does not match any other on the database."});
     } else {
         samples.splice(index, 1);
