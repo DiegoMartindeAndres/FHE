@@ -94,6 +94,8 @@ router.post('/', async (req, res) => {
     /**************************************************
      * UPDATE DATABASE GIVEN A TITLE
      **************************************************/
+    let found = false;
+
     if (title && valuesX && valuesY) {
         _.each(samples, async (sample, _index) => {
             if (sample.title == title) {
@@ -108,16 +110,20 @@ router.post('/', async (req, res) => {
                     sample.title = title;
                     sample.slope = m;
                     sample.yaxis_cutpoint = b;
+                    found = true;
                 }
-            } else {
-                res.status(500).json({error: "The title doesn't match any other on the database."});
             }
         });
-        res.json(samples);
     } else if (!title) {
         res.status(500).json({error: "Title unavailable."});
     } else {
         res.status(500).json({error: "Arrays unavailable."});
+    }
+
+    if (!found) {
+        res.status(500).json({error: "Title does not match any other on the database."});
+    } else {
+        res.json(samples);
     }
 });
 
@@ -143,17 +149,25 @@ router.post('/', async (req, res) => {
     /**************************************************
      * DELETE FROM DATABASE GIVEN A TITLE
      **************************************************/
+    let found = false;
+    let index = 0;
+
     if (title) {
-        _.each(samples, async (sample, index) => {
+        _.each(samples, async (sample, i) => {
             if (sample.title == title) {
-                samples.splice(index, 1);
-            } else {
-                res.status(500).json({error: "The title doesn't match any other on the database."});
+                found = true;
+                index = i;
             }
         });
-        res.json(samples);
     } else {
         res.status(500).json({error: "Title unavailable."});
+    }
+
+    if (!found) {
+        res.status(500).json({error: "Title does not match any other on the database."});
+    } else {
+        samples.splice(index, 1);
+        res.json(samples);
     }
 });
 

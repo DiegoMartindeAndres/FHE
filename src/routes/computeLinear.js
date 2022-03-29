@@ -33,14 +33,14 @@ const samples = require('../sample.json');
      **************************************************/
     var predicted = 0;
 
+    let found = false;
+
     if (title && predict) {
         if (samples.length != 0) {
             _.each(samples, async (sample, _index) => {
                 if (sample.title == title) {
                     predicted = await computePrediction(predict, sample.slope, sample.yaxis_cutpoint);
-                    res.json({titulo: title, height: predict, weight: predicted});
-                } else {
-                    res.status(500).json({error: "Title does not match any other on the database."});
+                    found = true;
                 }
             });
         } else {
@@ -48,6 +48,12 @@ const samples = require('../sample.json');
         }
     } else {
         res.status(500).json({error: "Title and X value for prediction are required."});
+    }
+
+    if (!found) {
+        res.status(500).json({error: "Title does not match any other on the database."});
+    } else {
+        res.json({titulo: title, height: predict, weight: predicted});
     }
 });
 
