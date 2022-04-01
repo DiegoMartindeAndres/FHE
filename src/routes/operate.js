@@ -6,7 +6,7 @@ const axios = require('axios');
 
 router.get('/', async (req, res) => {
 
-    //let val1 = JSON.parse(req.body.val1);
+    let val1 = JSON.parse(req.body.val1);
 
     // Require SEAL
     const SEAL = require('node-seal');
@@ -57,7 +57,7 @@ router.get('/', async (req, res) => {
     const evaluator = seal.Evaluator(context);
 
     // Ciphertexts
-    /* const uploadedCipherText = seal.CipherText();
+    const uploadedCipherText = seal.CipherText();
     uploadedCipherText.load(context, val1);
 
     const arrayB = Int32Array.from([2]);
@@ -70,8 +70,7 @@ router.get('/', async (req, res) => {
     
     let cipherTextDBase64 = cipherTextD.save();
 
-    res.send(cipherTextDBase64); */
-    res.send("received");
+    res.send(JSON.stringify(cipherTextDBase64));
 })
 
 module.exports = router;

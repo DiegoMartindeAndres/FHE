@@ -60,9 +60,11 @@ router.get('/', async (req, res) => {
     const cipherTextA = encryptor.encrypt(plainTextA);
     const cipherTextABase64 = cipherTextA.save();
 
-    console.log(JSON.stringify(cipherTextABase64).length);
+    //console.log(JSON.stringify(cipherTextABase64).length);
     
-    
+    // TODO: pasar un 2
+    // TODO: pasar una img
+    // TODO: tamaño axios
     axios.post("http://localhost:3000/api/operate", {
       val1: JSON.stringify(cipherTextABase64)
     })
