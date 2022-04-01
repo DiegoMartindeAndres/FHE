@@ -2,11 +2,9 @@ const {Router} = require('express');
 const router = Router();
 const _ = require('underscore');
 
-const axios = require('axios');
-
-router.get('/', async (req, res) => {
-
-    let val1 = JSON.parse(req.body.val1);
+router.post('/', async (req, res) => {
+    let val1 = req.body.val1;
+    let publicBase64Key = req.body.pk;
 
     // Require SEAL
     const SEAL = require('node-seal');
@@ -48,12 +46,9 @@ router.get('/', async (req, res) => {
     
     // Homomorphic objects for the computations
     const encoder = seal.BatchEncoder(context);
-    const keyGenerator = seal.KeyGenerator(context);
-    const publicKey = keyGenerator.createPublicKey();
-    const secretKey = keyGenerator.secretKey();
-    const relinKey = keyGenerator.createRelinKeys();
-    const encryptor = seal.Encryptor(context, publicKey);
-    const decryptor = seal.Decryptor(context, secretKey);
+    const UploadedPublicKey = seal.PublicKey();
+    UploadedPublicKey.load(context, publicBase64Key);
+    const encryptor = seal.Encryptor(context, UploadedPublicKey);
     const evaluator = seal.Evaluator(context);
 
     // Ciphertexts
@@ -70,7 +65,7 @@ router.get('/', async (req, res) => {
     
     let cipherTextDBase64 = cipherTextD.save();
 
-    res.send(JSON.stringify(cipherTextDBase64));
+    res.json(cipherTextDBase64);
 })
 
 module.exports = router;
