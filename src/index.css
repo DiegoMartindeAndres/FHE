@@ -5,9 +5,84 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: rgb(66, 180, 142);
+  padding: 2%;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.firstForm {
+  background-color: white;
+  box-shadow: 5px 5px 5px 2px rgba(0, 0, 0, 0.2);
+  padding: 5%;
+  width: 45%;
+  height: fit-content;
+}
+
+.inputFirstForm {
+  padding: 4%;
+  width: 100%;
+  margin-bottom: 5%;
+  border-top: hidden;
+  border-right: hidden;
+  border-left: hidden;
+  background-color: rgb(244, 244, 244);
+  outline: none;
+}
+
+.inputFirstForm:focus,
+.inputFirstForm:active {
+  border-top: hidden;
+  border-right: hidden;
+  border-left: hidden;
+  border-bottom: 3px solid rgb(66, 180, 142);
+}
+
+.inputFirstForm:hover {
+  box-shadow: 2px 2px 5px 1px rgba(0, 0, 0, 0.1);
+}
+
+.inputFirstForm:disabled {
+  border: hidden;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btnInitSEAL {
+  width: fit-content;
+  padding: 1.3%;
+  background-color: white;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: 20px;
+  text-transform: uppercase;
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin: 1%;
+}
+
+.btnFirstForm {
+  width: 100%;
+  padding: 4%;
+  text-align: center;
+  text-decoration: none;
+  background-color: rgb(86, 202, 163);
+  border: none;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.btnFirstForm:hover, .btnInitSEAL:hover {
+  cursor: pointer;
+  box-shadow: 4px 4px 8px 1px rgba(0, 0, 0, 0.1);
+}
+
+.btnFirstForm:disabled {
+  cursor: not-allowed;
+  box-shadow: none;
 }
