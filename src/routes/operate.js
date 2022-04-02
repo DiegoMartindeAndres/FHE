@@ -2,71 +2,22 @@ const {Router} = require('express');
 const router = Router();
 const _ = require('underscore');
 
-const samples = require('../sample.json');
-
 router.post('/', async (req, res) => {
 
     // Receive parameters
-    const valuesX = req.body.valuesX;
-    const valuesY = req.body.valuesY;
-    const N = valuesX.length;
+    const arrayX = req.body.valuesX;
+    const arrayY = req.body.valuesY;
+    const N = arrayX.length;
     const relinBase64Key = req.body.relinBase64Key;
     const publicBase64Key = req.body.publicBase64Key;
-    const title = req.body.title;
 
-    /**************************************************
-     * COMPUTE EQUATION PARAMETERS
-     **************************************************/
-    let leastSqMethod = await leastSquaresMethod(N, valuesX, valuesY, relinBase64Key, publicBase64Key);
-
-    let NumM = leastSqMethod[0];
-    let NumB = leastSqMethod[1]
-    let Den = leastSqMethod[2];
-
-    let existed = false;
-
-    if (title && NumM && NumB && Den) {
-        _.each(samples, (sample, _index) => {
-            if (sample.title == title) {
-                existed = true;
-            }
-        });
-    } else if (!title) {
-        res.status(500).json({error: "Title unavailable."});
-    } else{
-        res.status(500).json({error: "The slope and/or cut point numerator or denominator could not be computed."});
-    }
-
-    if (!existed) {
-        const id = samples.length + 1;
-        const newSample = {id, title, num_m: NumM, num_b: NumB, denom: Den};
-        samples.push(newSample);
-        res.json(samples);
-    } else {
-        res.status(500).json({error: "That title is already in use in the database."});
-    }
-})
-
-
-
-/**************************************************
- * LEAST SQUARES FUNCTION
- **************************************************/
-async function leastSquaresMethod(N, arrayX, arrayY, relinBase64Key, publicBase64Key) {
     /**************************************************
      * CHECK VALIDITY OF VALUES TO BE COMPUTED
      **************************************************/
-    if (arrayX.length != N ||
-        arrayY.length != N ||
-        N<0) {
+     if (arrayX.length !=
+        arrayY.length ) {
             throw new Error(
-                'Array lengths not valid.'
-            )
-    }
-
-    if (N>0 && N<2) {
-            throw new Error(
-                'At least length 2 of the arrays is needed.'
+                'El tamaño de los arrays es distinto.'
             )
     }
 
@@ -393,27 +344,6 @@ async function leastSquaresMethod(N, arrayX, arrayY, relinBase64Key, publicBase6
     evaluator.sub(bARescale, bBRescale, bAB);
 
     /**************************************************
-     * FINAL COMPUTATIONS WITH CLEAR DATA
-     * 
-     * Calculate the slope and the cut point in the
-     * Y axis with clear data to be returned to the 
-     * user.
-     **************************************************/
-    // Compute mE = Dec(mAB / mCD)
-    /* const decryptedPlainTextmAB = decryptor.decrypt(mAB);
-    const decodedArraymAB = encoder.decode(decryptedPlainTextmAB);
-    const decryptedPlainTextmCD = decryptor.decrypt(mCD);
-    const decodedArraymCD = encoder.decode(decryptedPlainTextmCD);
-
-    let m = decodedArraymAB[0] / decodedArraymCD[0];
-
-    // Compute bE = Dec(bAB / mCD)
-    const decryptedPlainTextbAB = decryptor.decrypt(bAB);
-    const decodedArraybAB = encoder.decode(decryptedPlainTextbAB);
-
-    let b = decodedArraybAB[0] / decodedArraymCD[0]; */
-
-    /**************************************************
      * RETURN SLOPE AND CUT POINT NUMERATOR
      * AND DENOMINATOR
      **************************************************/
@@ -421,8 +351,8 @@ async function leastSquaresMethod(N, arrayX, arrayY, relinBase64Key, publicBase6
     const bABBase64 = bAB.save();
     const mCDBase64 = mCD.save();
 
-    return [mABBase64, bABBase64, mCDBase64];
-}
+    res.json({numeratorSlope: mABBase64, numeratorCutPoint: bABBase64, denominator: mCDBase64});
+})
 
 /**************************************************
  * EXPORT
