@@ -16,12 +16,11 @@ app.use(express.urlencoded({limit: '50mb'}));
 app.use(express.json()); // Server understands JSON format  
 
 // Routes
-app.use('/api/sumbfv', require('./routes/sumbfv.js'));
-app.use('/api/sumckks', require('./routes/sumckks.js'));
 app.use('/api/parms-linear', require('./routes/parmsLinear.js'));
 app.use('/api/compute-linear', require('./routes/computeLinear.js'));
 app.use('/api/string', require('./routes/string.js'));
-app.use('/api/operate', require('./routes/operate.js'));
+app.use('/api/parms-linear-reg', require('./routes/parmsLinearReg.js'));
+app.use('/api/predict-linear-reg', require('./routes/predictLinearReg.js'));
 
 // Starting server -> npm run dev
 app.listen(app.get('PORT'), () => {console.log(`Server on port ${app.get('PORT')}`)});
