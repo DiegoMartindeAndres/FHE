@@ -8,6 +8,7 @@ const SEAL = require('node-seal');
 function App() {
   // UseState for homomorphic variables
   const [seal, setSeal] = React.useState(null);
+  const [parmsBase64, setParmsBase64] = React.useState(null);
   const [context, setContext] = React.useState(null);
   const [scale, setScale] = React.useState(0);
 
@@ -71,6 +72,12 @@ function App() {
     parms.setCoeffModulus(
         seal.CoeffModulus.Create(polyModulusDegree, Int32Array.from(bitSizes))
     );
+
+    /**************************************************
+    * SAVE PARMS INTO THE STREAM
+    **************************************************/
+    let parmsBase64 = parms.save();
+    setParmsBase64(parmsBase64);
     
     /**************************************************
     * CREATE CONTEXT
@@ -195,6 +202,8 @@ function App() {
     var postData = {
       valuesX: storeXValues,
       valuesY: storeYValues,
+      parmsBase64: parmsBase64,
+      scale: scale,
       relinBase64Key: relinBase64Key,
       publicBase64Key: publicBase64Key
     };
@@ -306,6 +315,7 @@ function App() {
       cipherTextBase64Predict: cipherTextXBase64,
       cipherTextBase64M: cipherTextMBase64,
       cipherTextBase64B: cipherTextBBase64,
+      parmsBase64: parmsBase64,
       relinBase64Key: relinBase64Key
     };
     
