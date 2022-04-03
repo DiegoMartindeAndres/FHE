@@ -2,12 +2,19 @@ const {Router} = require('express');
 const router = Router();
 const _ = require('underscore');
 
+/**************************************************
+ * POST
+ **************************************************/
 router.post('/', async (req, res) => {
 
-    // Receive parameters
+    /**************************************************
+     * RECEIVE PARAMETERS FROM BODY
+     **************************************************/
     const arrayX = req.body.valuesX;
     const arrayY = req.body.valuesY;
     const N = arrayX.length;
+    const scale = req.body.scale;
+    const parmsBase64 = req.body.parmsBase64;
     const relinBase64Key = req.body.relinBase64Key;
     const publicBase64Key = req.body.publicBase64Key;
 
@@ -30,25 +37,8 @@ router.post('/', async (req, res) => {
     /**************************************************
      * SCHEME PARAMETERS
      **************************************************/
-    const schemeType = seal.SchemeType.ckks;
-    const securityLevel = seal.SecurityLevel.tc128;
-    const polyModulusDegree = 8192;
-    const bitSizes = [50, 30, 30, 30, 50];
-    const bitSize = 30;
-    
-    const parms = seal.EncryptionParameters(schemeType);
-    
-    /**************************************************
-     * POLY MODULUS DEGREE
-     **************************************************/
-    parms.setPolyModulusDegree(polyModulusDegree);
-    
-    /**************************************************
-     * COEFF MODULUS PRIMES
-     **************************************************/
-    parms.setCoeffModulus(
-        seal.CoeffModulus.Create(polyModulusDegree, Int32Array.from(bitSizes))
-    );
+    const parms = seal.EncryptionParameters();
+    parms.load(parmsBase64);
     
     /**************************************************
      * CREATE CONTEXT
@@ -56,7 +46,7 @@ router.post('/', async (req, res) => {
     const context = seal.Context(
         parms, // Encryption Parameters
         true, // ExpandModChain
-        securityLevel // Enforce a security level
+        seal.SecurityLevel.tc128 // Enforce a security level
     );
     
     /**************************************************
@@ -107,11 +97,6 @@ router.post('/', async (req, res) => {
      * m = (N*Sxy-Sx*Sy)/(N*Sxx-Sx*Sx)
      * b = (Sy*Sxx-Sx*Sxy)/(N*Sxx-Sx*Sx)
      **************************************************/
-
-    /**************************************************
-     * SCALE
-     **************************************************/
-    const scale = Math.pow(2.0, bitSize);
 
     /**************************************************
      * COMPUTE Sx

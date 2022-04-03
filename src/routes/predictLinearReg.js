@@ -12,6 +12,7 @@ router.post('/', async (req, res) => {
     const cipherTextBase64Predict = req.body.cipherTextBase64Predict;
     const cipherTextBase64M = req.body.cipherTextBase64M;
     const cipherTextBase64B = req.body.cipherTextBase64B;
+    const parmsBase64 = req.body.parmsBase64;
     const relinBase64Key = req.body.relinBase64Key;
  
     /**************************************************
@@ -23,24 +24,8 @@ router.post('/', async (req, res) => {
     /**************************************************
      * SCHEME PARAMETERS
      **************************************************/
-    const schemeType = seal.SchemeType.ckks;
-    const securityLevel = seal.SecurityLevel.tc128;
-    const polyModulusDegree = 8192;
-    const bitSizes = [50, 30, 30, 30, 50];
-    
-    const parms = seal.EncryptionParameters(schemeType);
-    
-    /**************************************************
-     * POLY MODULUS DEGREE
-     **************************************************/
-    parms.setPolyModulusDegree(polyModulusDegree);
-    
-    /**************************************************
-     * COEFF MODULUS PRIMES
-     **************************************************/
-    parms.setCoeffModulus(
-        seal.CoeffModulus.Create(polyModulusDegree, Int32Array.from(bitSizes))
-    );
+    const parms = seal.EncryptionParameters();
+    parms.load(parmsBase64);
     
     /**************************************************
      * CREATE CONTEXT
@@ -48,7 +33,7 @@ router.post('/', async (req, res) => {
     const context = seal.Context(
         parms, // Encryption Parameters
         true, // ExpandModChain
-        securityLevel // Enforce a security level
+        seal.SecurityLevel.tc128 // Enforce a security level
     );
     
     /**************************************************
@@ -97,7 +82,7 @@ router.post('/', async (req, res) => {
     /**************************************************
      * RETURN PREDICTION
      **************************************************/
-     const cipherTextBase64Prediction = cipherTextPrediction.save();
+    const cipherTextBase64Prediction = cipherTextPrediction.save();
  
      res.json({yPrediction: cipherTextBase64Prediction});
 
