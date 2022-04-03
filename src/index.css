@@ -70,6 +70,9 @@ code {
   width: 100%;
   padding: 4%;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-decoration: none;
   background-color: rgb(86, 202, 163);
   border: none;

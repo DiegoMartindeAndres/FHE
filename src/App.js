@@ -12,10 +12,15 @@ function App() {
   const [scale, setScale] = React.useState(0);
 
   const [encoder, setEncoder] = React.useState(null);
-  const [publicKey, setPublicKey] = React.useState(null);
-  const [relinKey, setRelinKey] = React.useState(null);
   const [encryptor, setEncryptor] = React.useState(null);
   const [decryptor, setDecryptor] = React.useState(null);
+
+  const [publicBase64Key, setPublicBase64Key] = React.useState(null);
+  const [relinBase64Key, setRelinBase64Key] = React.useState(null);
+
+  // Linear regression variables
+  const [m, setM] = React.useState(0);
+  const [b, setB] = React.useState(0);
 
   // UseState for displaying server answers
   const [serverAnswer, setServerAnswer] = React.useState(null);
@@ -23,9 +28,16 @@ function App() {
 
   // UseState for visibility
   const [creatingParms, setCreatingParms] = React.useState(false);
+  const [computingParms, setComputingParms] = React.useState(false);
+  const [computingPredict, setComputingPredict] = React.useState(false);
   const [divDisabledParms, setDivDisabledParms] = React.useState(true);
   const [divDisabled, setDivDisabled] = React.useState(true);
+  const [textColorDisabledParms, setTextColorDisabledParms] = React.useState('rgb(150, 150, 150)');
+  const [textColorDisabledPredict, setTextColorDisabledPredict] = React.useState('rgb(150, 150, 150)');
 
+  /**************************************************
+   * INITIALIZE SEAL VARIABLES
+   **************************************************/
   async function initSEAL() {
     /**************************************************
      * INIT SEAL
@@ -86,28 +98,39 @@ function App() {
     let encoder = seal.CKKSEncoder(context);
     setEncoder(encoder);
     const keyGenerator = seal.KeyGenerator(context);
-    let publicKey = keyGenerator.createPublicKey();
-    setPublicKey(publicKey);
+    const publicKey = keyGenerator.createPublicKey();
     const secretKey = keyGenerator.secretKey();
-    let relinKey = keyGenerator.createRelinKeys();
-    setRelinKey(relinKey);
+    const relinKey = keyGenerator.createRelinKeys();
     let encryptor = seal.Encryptor(context, publicKey, secretKey);
     setEncryptor(encryptor);
     let decryptor = seal.Decryptor(context, secretKey);
     setDecryptor(decryptor);
+
+    /**************************************************
+     * SAVE KEYS TO BE SENT AS BASE64 STRINGS
+     **************************************************/
+    const relinBase64Key = relinKey.save();
+    setRelinBase64Key(relinBase64Key);
+    const publicBase64Key = publicKey.save();
+    setPublicBase64Key(publicBase64Key);
     
     /**************************************************
      * TOGGLE VISIBILITY
      **************************************************/
     setDivDisabledParms(false);
     setCreatingParms(false);
+    setTextColorDisabledParms('rgb(0,0,0)');
   }
 
 
-  
 
+
+  /**************************************************
+   * COMPUTE PARAMETERS FOR LINEAR REGRESSION
+   **************************************************/
   const callServer = async () => {
     // Inform client that encryption has begun
+    setComputingParms(true);
     setServerAnswer(`Encriptando...`);
 
     /**************************************************
@@ -167,12 +190,6 @@ function App() {
     }
 
     /**************************************************
-     * SAVE KEYS TO BE SENT AS BASE64 STRINGS
-     **************************************************/
-    const relinBase64Key = relinKey.save();
-    const publicBase64Key = publicKey.save();
-
-    /**************************************************
      * AXIOS ASYNCHRONOUS PETITION
      **************************************************/
     var postData = {
@@ -192,7 +209,7 @@ function App() {
     // Inform client that the server is computing the data
     setServerAnswer(`Esperando respuesta del servidor...`);
 
-    await axios.post('http://localhost:3000/api/operate', postData, axiosConfig)
+    await axios.post('http://localhost:3000/api/parms-linear-reg', postData, axiosConfig)
     .then(res => {
       // Inform client that the decryption has begun
       setServerAnswer(`Desencriptando...`);
@@ -225,21 +242,118 @@ function App() {
       /**
        * Compute slope and cut point in y axis
        */
-      const m = decodedArrayNumeratorSlope[0] / decodedArrayDenominator[0];
-      const b = decodedArrayNumeratorCP[0] / decodedArrayDenominator[0];
+      let m = decodedArrayNumeratorSlope[0] / decodedArrayDenominator[0];
+      setM(m);
+      let b = decodedArrayNumeratorCP[0] / decodedArrayDenominator[0];
+      setB(b);
 
-      console.log('m', m);
-      console.log('b', b);
-
-      setServerAnswer(`y = mx + b = ${m}x + ${b}`);
+      /**
+       * Actualizar UI
+       */
+      setServerAnswer(
+        b>0 ? `y = mx + b = ${m}x + ${b}`
+        : `y = mx + b = ${m}x - ${Math.abs(b)}`
+      );
       setDivDisabled(false);
+      setTextColorDisabledPredict('rgb(0,0,0)');
+      setComputingParms(false);
 
     }).catch(err => console.log(err.response.data));
   }
 
+
+
+
+  /**************************************************
+   * COMPUTE PREDICTION
+   **************************************************/
   const callServerPredict = async () => {
     // Inform client that encryption has begun
+    setComputingPredict(true);
     setServerAnswerTwo(`Encriptando...`);
+
+    /**************************************************
+     * OBTAIN X VALUE FOR PREDICTION
+     **************************************************/
+    let predictX = document.getElementById('valuePredict').value.split(',');
+
+    /**************************************************
+     * ENCRYPT DATA TO PREDICT y = mx + b
+     **************************************************/
+    // m
+    const plainTextM = seal.PlainText();
+    const sealArrayM = Float64Array.from([m]);
+    encoder.encode(sealArrayM, scale, plainTextM);
+    const cipherTextM = encryptor.encryptSymmetric(plainTextM);
+    const cipherTextMBase64 = cipherTextM.save();
+    // x
+    const plainTextX = seal.PlainText();
+    const sealArrayX = Float64Array.from([predictX]);
+    encoder.encode(sealArrayX, scale, plainTextX);
+    const cipherTextX = encryptor.encryptSymmetric(plainTextX);
+    const cipherTextXBase64 = cipherTextX.save();
+    // b
+    const plainTextB = seal.PlainText();
+    const sealArrayB = Float64Array.from([b]);
+    encoder.encode(sealArrayB, scale, plainTextB);
+    const cipherTextB = encryptor.encryptSymmetric(plainTextB);
+    const cipherTextBBase64 = cipherTextB.save();
+
+    /**************************************************
+     * AXIOS ASYNCHRONOUS PETITION
+     **************************************************/
+     var postData = {
+      cipherTextBase64Predict: cipherTextXBase64,
+      cipherTextBase64M: cipherTextMBase64,
+      cipherTextBase64B: cipherTextBBase64,
+      relinBase64Key: relinBase64Key
+    };
+    
+    let axiosConfig = {
+      headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          "Access-Control-Allow-Origin": "*",
+      }
+    };
+
+    // Inform client that the server is computing the data
+    setServerAnswerTwo(`Esperando respuesta del servidor...`);
+
+    await axios.post('http://localhost:3000/api/predict-linear-reg', postData, axiosConfig)
+    .then(res => {
+      // Inform client that the decryption has begun
+      setServerAnswerTwo(`Desencriptando...`);
+
+      /**
+       * The format of the JSON to be received is the following:
+       * {yPrediction}
+       */
+      const predictionEncrypted = seal.CipherText();
+      predictionEncrypted.load(context, res.data.yPrediction);
+      
+      /**
+       * Decrypt variables
+       */
+      const decryptedPlainTextPrediction = decryptor.decrypt(predictionEncrypted);
+
+      /**
+       * Decode variables
+       */
+      const decodedArrayPrediction = encoder.decode(decryptedPlainTextPrediction);
+
+      /**
+       * Compute slope and cut point in y axis
+       */
+      let y = decodedArrayPrediction[0];
+
+      /**
+       * Actualizar UI
+       */
+      setServerAnswerTwo(`y = ${y}`);
+      setComputingPredict(false);
+
+    }).catch(err => console.log(err.response.data));
+
   }
 
   return (
@@ -249,25 +363,25 @@ function App() {
       </button>
       <div className="firstForm">
         <form style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2%'}}>
-          <h4>Calcular parámetros para la regresión lineal,</h4>
+          <h4 style={{color: textColorDisabledParms}}>Calcular parámetros para la regresión lineal,</h4>
           <input type="text" className="inputFirstForm" name="X axis" id="valuesXId" 
           placeholder='Insertar valores en X' disabled={divDisabledParms}/>
           <input type="text" className="inputFirstForm" name="Y axis" id="valuesYId" 
           placeholder='Insertar valores en Y' disabled={divDisabledParms}/>
         </form>
         <button onClick={callServer} className="btnFirstForm" disabled={divDisabledParms}>
-            Enviar
+            {computingParms ? <LoadingSpinner/> : 'Enviar'}
         </button>
         <p>{serverAnswer}</p>
       </div>
       <div className="firstForm" style={{marginTop: '3%'}}>
         <form style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2%'}}>
-          <h4>Calcular predicción,</h4>
+          <h4 style={{color: textColorDisabledPredict}}>Calcular predicción,</h4>
           <input type="text" className="inputFirstForm" name="predict" id="valuePredict" 
             placeholder='Insertar valor en X' disabled={divDisabled}/>
         </form>
         <button onClick={callServerPredict} className="btnFirstForm" disabled={divDisabled}>
-            Enviar
+          {computingPredict ? <LoadingSpinner/> : 'Enviar'}
         </button>
         <p>{serverAnswerTwo}</p>
       </div>
