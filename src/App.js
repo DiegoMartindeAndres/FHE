@@ -2,6 +2,7 @@ import './App.css';
 import axios from 'axios';
 import React from "react";
 import LoadingSpinner from './LoadingSpinner';
+import {ReactComponent as PowerOnOff} from './res/powerOnOff.svg';
 
 const SEAL = require('node-seal');
 
@@ -28,6 +29,7 @@ function App() {
   const [serverAnswerTwo, setServerAnswerTwo] = React.useState(null);
 
   // UseState for visibility
+  const [powerOff, setPowerOff] = React.useState(true);
   const [creatingParms, setCreatingParms] = React.useState(false);
   const [computingParms, setComputingParms] = React.useState(false);
   const [computingPredict, setComputingPredict] = React.useState(false);
@@ -127,6 +129,7 @@ function App() {
     setDivDisabledParms(false);
     setCreatingParms(false);
     setTextColorDisabledParms('rgb(0,0,0)');
+    setPowerOff(false);
   }
 
 
@@ -369,7 +372,9 @@ function App() {
   return (
     <div className="App" style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
       <button onClick={initSEAL} className="btnInitSEAL">
-          {creatingParms ? <LoadingSpinner/> : 'Init SEAL'}
+        {creatingParms ? <LoadingSpinner/> : 
+        (powerOff ? <PowerOnOff className='icon__off' fill='rgba(255, 0, 0, 0.9)'/> : 
+        <PowerOnOff className='icon__on' fill='rgba(0, 255, 0, 0.9)'/>)}
       </button>
       <div className="firstForm">
         <form style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2%'}}>

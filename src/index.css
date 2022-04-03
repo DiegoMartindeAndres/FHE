@@ -89,3 +89,15 @@ code {
   cursor: not-allowed;
   box-shadow: none;
 }
+
+.icon__off {
+  display: flex;
+  width: 3rem;
+  height: 1.3rem;
+}
+
+.icon__on {
+  display: flex;
+  width: 3rem;
+  height: 1.3rem;
+}
