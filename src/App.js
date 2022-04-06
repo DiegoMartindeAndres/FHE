@@ -150,7 +150,9 @@ function App() {
     // Inform client that encryption has begun
     setComputingParms(true);
     setServerAnswer(`Encriptando...`);
-    setFillCircleOne('rgba(0, 255, 0, 0.9)');
+    setFillCircleOne('white');
+    setFillCircleTwo('white');
+    setFillCircleThree('white');
 
     /**************************************************
      * OBTAIN AXIS ARRAYS
@@ -189,24 +191,28 @@ function App() {
      * STORE ARRAY VALUES ENCRYPTED
      **************************************************/
     let storeXValues = []; // Array of X axis ciphertexts in base 64
+    var plainTextX = seal.PlainText();
+    var cipherTextX = seal.CipherText();
     for (let i=0; i<N; i++) {
-        const plainTextX = seal.PlainText();
-        const sealArrayX = Float64Array.from([arrayX[i]]);
-        encoder.encode(sealArrayX, scale, plainTextX);
-        const cipherTextX = encryptor.encryptSymmetric(plainTextX);
-        const cipherTextXBase64 = cipherTextX.save();
-        storeXValues[i] = cipherTextXBase64;
+      const sealArrayX = Float64Array.from([arrayX[i]]);
+      encoder.encode(sealArrayX, scale, plainTextX);
+      cipherTextX = encryptor.encryptSymmetric(plainTextX);
+      storeXValues[i] = cipherTextX.save();
     }
+    plainTextX.delete();
+    cipherTextX.delete();
 
     let storeYValues = []; // Array of Y axis ciphertexts in base 64
+    var plainTextY = seal.PlainText();
+    var cipherTextY = seal.CipherText();
     for (let i=0; i<N; i++) {
-        const plainTextY = seal.PlainText();
-        const sealArrayY = Float64Array.from([arrayY[i]]);
-        encoder.encode(sealArrayY, scale, plainTextY);
-        const cipherTextY = encryptor.encryptSymmetric(plainTextY);
-        const cipherTextYBase64 = cipherTextY.save();
-        storeYValues[i] = cipherTextYBase64;
+      const sealArrayY = Float64Array.from([arrayY[i]]);
+      encoder.encode(sealArrayY, scale, plainTextY);
+      cipherTextY = encryptor.encryptSymmetric(plainTextY);
+      storeYValues[i] = cipherTextY.save();
     }
+    plainTextY.delete();
+    cipherTextY.delete();
 
     /**************************************************
      * AXIOS ASYNCHRONOUS PETITION
@@ -229,13 +235,13 @@ function App() {
 
     // Inform client that the server is computing the data
     setServerAnswer(`Esperando respuesta del servidor...`);
-    setFillCircleTwo('rgba(0, 255, 0, 0.9)');
+    setFillCircleOne('rgba(0, 255, 0, 0.9)');
 
     await axios.post('http://localhost:3000/api/parms-linear-reg', postData, axiosConfig)
     .then(res => {
       // Inform client that the decryption has begun
       setServerAnswer(`Desencriptando...`);
-      setFillCircleThree('rgba(0, 255, 0, 0.9)');
+      setFillCircleTwo('rgba(0, 255, 0, 0.9)');
 
       /**
        * The format of the JSON to be received is the following:
@@ -252,15 +258,21 @@ function App() {
        * Decrypt variables
        */
       const decryptedPlainTextNumeratorSlope = decryptor.decrypt(numeratorSlopeEncrypted);
+      numeratorSlopeEncrypted.delete();
       const decryptedPlainTextNumeratorCP = decryptor.decrypt(numeratorCutPointEncrypted);
+      numeratorCutPointEncrypted.delete();
       const decryptedPlainTextDenominator = decryptor.decrypt(denominatorEncrypted);
+      denominatorEncrypted.delete();
 
       /**
        * Decode variables
        */
       const decodedArrayNumeratorSlope = encoder.decode(decryptedPlainTextNumeratorSlope);
+      decryptedPlainTextNumeratorSlope.delete();
       const decodedArrayNumeratorCP = encoder.decode(decryptedPlainTextNumeratorCP);
+      decryptedPlainTextNumeratorCP.delete();
       const decodedArrayDenominator = encoder.decode(decryptedPlainTextDenominator);
+      decryptedPlainTextDenominator.delete();
 
       /**
        * Compute slope and cut point in y axis
@@ -280,8 +292,13 @@ function App() {
       setDivDisabled(false);
       setTextColorDisabledPredict('rgb(0,0,0)');
       setComputingParms(false);
+      setFillCircleThree('rgba(0, 255, 0, 0.9)');
 
-    }).catch(err => console.log(err.response.data));
+    }).catch(err => {
+      setComputingParms(false);
+      setFillCircleTwo('rgba(255, 0, 0, 0.9)');
+      console.log(err.response.data)
+    });
   }
 
 
@@ -294,7 +311,9 @@ function App() {
     // Inform client that encryption has begun
     setComputingPredict(true);
     setServerAnswerTwo(`Encriptando...`);
-    setFillCircleOnePredict('rgba(0, 255, 0, 0.9)');
+    setFillCircleOnePredict('white');
+    setFillCircleTwoPredict('white');
+    setFillCircleThreePredict('white');
 
     /**************************************************
      * OBTAIN X VALUE FOR PREDICTION
@@ -310,18 +329,24 @@ function App() {
     encoder.encode(sealArrayM, scale, plainTextM);
     const cipherTextM = encryptor.encryptSymmetric(plainTextM);
     const cipherTextMBase64 = cipherTextM.save();
+    plainTextM.delete();
+    cipherTextM.delete();
     // x
     const plainTextX = seal.PlainText();
     const sealArrayX = Float64Array.from([predictX]);
     encoder.encode(sealArrayX, scale, plainTextX);
     const cipherTextX = encryptor.encryptSymmetric(plainTextX);
     const cipherTextXBase64 = cipherTextX.save();
+    plainTextX.delete();
+    cipherTextX.delete();
     // b
     const plainTextB = seal.PlainText();
     const sealArrayB = Float64Array.from([b]);
     encoder.encode(sealArrayB, scale, plainTextB);
     const cipherTextB = encryptor.encryptSymmetric(plainTextB);
     const cipherTextBBase64 = cipherTextB.save();
+    plainTextB.delete();
+    cipherTextB.delete();
 
     /**************************************************
      * AXIOS ASYNCHRONOUS PETITION
@@ -343,13 +368,13 @@ function App() {
 
     // Inform client that the server is computing the data
     setServerAnswerTwo(`Esperando respuesta del servidor...`);
-    setFillCircleTwoPredict('rgba(0, 255, 0, 0.9)');
+    setFillCircleOnePredict('rgba(0, 255, 0, 0.9)');
 
     await axios.post('http://localhost:3000/api/predict-linear-reg', postData, axiosConfig)
     .then(res => {
       // Inform client that the decryption has begun
       setServerAnswerTwo(`Desencriptando...`);
-      setFillCircleThreePredict('rgba(0, 255, 0, 0.9)');
+      setFillCircleTwoPredict('rgba(0, 255, 0, 0.9)');
 
       /**
        * The format of the JSON to be received is the following:
@@ -362,11 +387,13 @@ function App() {
        * Decrypt variables
        */
       const decryptedPlainTextPrediction = decryptor.decrypt(predictionEncrypted);
+      predictionEncrypted.delete();
 
       /**
        * Decode variables
        */
       const decodedArrayPrediction = encoder.decode(decryptedPlainTextPrediction);
+      decryptedPlainTextPrediction.delete();
 
       /**
        * Compute slope and cut point in y axis
@@ -378,8 +405,13 @@ function App() {
        */
       setServerAnswerTwo(`y = ${y}`);
       setComputingPredict(false);
+      setFillCircleThreePredict('rgba(0, 255, 0, 0.9)');
 
-    }).catch(err => console.log(err.response.data));
+    }).catch(err => {
+      setComputingPredict(false);
+      setFillCircleTwoPredict('rgba(255, 0, 0, 0.9)');
+      console.log(err.response.data)
+    });
 
   }
 
@@ -406,29 +438,29 @@ function App() {
             <p>{serverAnswer}</p>
           </div>
           <div className='show__timeline'>
-            <ul class="timeline">
+            <ul className="timeline">
               <li>
-                  <div class="timeline-badge">
+                  <div className="timeline-badge">
                     <Circle fill={fillCircleOne} className='icon__circle'/>
                   </div>
-                  <div class="timeline-panel">
-                      <div class="timeline-heading">
+                  <div className="timeline-panel">
+                      <div className="timeline-heading">
                           <h4>Cliente</h4>
                       </div>
-                      <div class="timeline-body">
+                      <div className="timeline-body">
                           <p>Encripta los ejes X e Y y los envía al servidor.</p>
                       </div>
                   </div>
               </li>
-              <li class="timeline-inverted">
-                  <div class="timeline-badge">
+              <li className="timeline-inverted">
+                  <div className="timeline-badge">
                     <Circle fill={fillCircleTwo} className='icon__circle'/>
                   </div>
-                  <div class="timeline-panel">
-                      <div class="timeline-heading">
+                  <div className="timeline-panel">
+                      <div className="timeline-heading">
                           <h4>Servidor</h4>
                       </div>
-                      <div class="timeline-body">
+                      <div className="timeline-body">
                           <p>Calcula la pendiente y el punto de corte en el eje Y con los datos encriptados recibidos.
                             Los reenvía al cliente aun encriptados. No conoce la clave privada.
                           </p>
@@ -436,19 +468,19 @@ function App() {
                   </div>
               </li>
               <li>
-                  <div class="timeline-badge">
+                  <div className="timeline-badge">
                     <Circle fill={fillCircleThree} className='icon__circle'/>
                   </div>
-                  <div class="timeline-panel">
-                      <div class="timeline-heading">
+                  <div className="timeline-panel">
+                      <div className="timeline-heading">
                           <h4>Cliente</h4>
                       </div>
-                      <div class="timeline-body">
+                      <div className="timeline-body">
                           <p>Desencripta los parámetros recibidos con la clave privada y muestra la ecuación lineal.</p>
                       </div>
                   </div>
               </li>
-              <li class="clearfix no-float"></li>
+              <li className="clearfix no-float"></li>
             </ul>
           </div>
         </div>
@@ -465,48 +497,48 @@ function App() {
             <p>{serverAnswerTwo}</p>
           </div>
           <div className='show__timeline'>
-            <ul class="timeline">
+            <ul className="timeline">
               <li>
-                  <div class="timeline-badge">
+                  <div className="timeline-badge">
                     <Circle fill={fillCircleOnePredict} className='icon__circle'/>
                   </div>
-                  <div class="timeline-panel">
-                      <div class="timeline-heading">
+                  <div className="timeline-panel">
+                      <div className="timeline-heading">
                           <h4>Cliente</h4>
                       </div>
-                      <div class="timeline-body">
+                      <div className="timeline-body">
                           <p>Encripta la pendiente y el punto de corte obtenidos anteriormente junto con el valor en X para la predicción y los envía al servidor.</p>
                       </div>
                   </div>
               </li>
-              <li class="timeline-inverted">
-                  <div class="timeline-badge">
+              <li className="timeline-inverted">
+                  <div className="timeline-badge">
                     <Circle fill={fillCircleTwoPredict} className='icon__circle'/>
                   </div>
-                  <div class="timeline-panel">
-                      <div class="timeline-heading">
+                  <div className="timeline-panel">
+                      <div className="timeline-heading">
                           <h4>Servidor</h4>
                       </div>
-                      <div class="timeline-body">
+                      <div className="timeline-body">
                           <p>Calcula la predicción con la ecuación 'y = mx + b' en el eje Y y la reenvía encriptada al cliente. No conoce la clave privada.
                           </p>
                       </div>
                   </div>
               </li>
               <li>
-                  <div class="timeline-badge">
+                  <div className="timeline-badge">
                     <Circle fill={fillCircleThreePredict} className='icon__circle'/>
                   </div>
-                  <div class="timeline-panel">
-                      <div class="timeline-heading">
+                  <div className="timeline-panel">
+                      <div className="timeline-heading">
                           <h4>Cliente</h4>
                       </div>
-                      <div class="timeline-body">
+                      <div className="timeline-body">
                           <p>Desencripta la predicción obtenida y la muestra por pantalla.</p>
                       </div>
                   </div>
               </li>
-              <li class="clearfix no-float"></li>
+              <li className="clearfix no-float"></li>
             </ul>
           </div>
         </div>

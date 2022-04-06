@@ -52,7 +52,10 @@ code {
 }
 
 .btnInitSEAL {
-  width: fit-content;
+  width: 7%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: fit-content;
   padding: 1%;
   background-color: white;
