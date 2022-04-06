@@ -70,21 +70,32 @@ router.post('/', async (req, res) => {
     cipherTextaux = evaluator.multiply(cipherTextm, cipherTextx);
     const cipherTextauxRelin = evaluator.relinearize(cipherTextaux, relinKey);
     const cipherTextauxRescale = evaluator.rescaleToNext(cipherTextauxRelin);
+    cipherTextaux.delete();
+    cipherTextauxRelin.delete();
+    cipherTextm.delete();
+    cipherTextx.delete();
 
     // Rescale and mod switch b to match mx
     cipherTextb.setScale(cipherTextauxRescale.scale);
     const cipherTextbModSwitch = evaluator.cipherModSwitchTo(cipherTextb, cipherTextauxRescale.parmsId);
+    cipherTextb.delete();
 
     // Compute prediction
     let cipherTextPrediction = seal.CipherText();
     evaluator.add(cipherTextauxRescale, cipherTextbModSwitch, cipherTextPrediction);
+    cipherTextauxRescale.delete();
+    cipherTextbModSwitch.delete();
+
+    relinKey.delete();
+    evaluator.delete();
 
     /**************************************************
      * RETURN PREDICTION
      **************************************************/
     const cipherTextBase64Prediction = cipherTextPrediction.save();
+    cipherTextPrediction.delete();
  
-     res.json({yPrediction: cipherTextBase64Prediction});
+    res.json({yPrediction: cipherTextBase64Prediction});
 
 });
 

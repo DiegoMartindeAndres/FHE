@@ -138,24 +138,32 @@ router.post('/', async (req, res) => {
     evaluator.multiply(storeYValues[0], storeXValues[0], cipherTextSxyaux0);
     const cipherTextSxyauxRelin0 = evaluator.relinearize(cipherTextSxyaux0, relinKey);
     const cipherTextSxyauxRescale0 = evaluator.rescaleToNext(cipherTextSxyauxRelin0);
+    cipherTextSxyaux0.delete();
+    cipherTextSxyauxRelin0.delete();
 
     evaluator.multiply(storeYValues[1], storeXValues[1], cipherTextSxyaux1);
     const cipherTextSxyauxRelin1 = evaluator.relinearize(cipherTextSxyaux1, relinKey);
     const cipherTextSxyauxRescale1 = evaluator.rescaleToNext(cipherTextSxyauxRelin1);
+    cipherTextSxyaux1.delete();
+    cipherTextSxyauxRelin1.delete();
 
-    evaluator.add(cipherTextSxyauxRescale0, cipherTextSxyauxRescale1, cipherTextSxyauxRescale0);
-    cipherTextSxy = cipherTextSxyauxRescale0;
+    evaluator.add(cipherTextSxyauxRescale0, cipherTextSxyauxRescale1, cipherTextSxy);
+    cipherTextSxyauxRescale0.delete();
+    cipherTextSxyauxRescale1.delete();
 
+    var cipherTextSxyaux = seal.CipherText();
+    var cipherTextSxyauxRelin = seal.CipherText();
     for (let i=2; i<N; i++) {
-        var cipherTextSxyaux = seal.CipherText();
         evaluator.multiply(storeYValues[i], storeXValues[i], cipherTextSxyaux);
-        const cipherTextSxyauxRelin = evaluator.relinearize(cipherTextSxyaux, relinKey);
-        const cipherTextSxyauxRescale = evaluator.rescaleToNext(cipherTextSxyauxRelin);
-        storeXYvalues[i] = cipherTextSxyauxRescale;
+        cipherTextSxyauxRelin = evaluator.relinearize(cipherTextSxyaux, relinKey);
+        storeXYvalues[i] = evaluator.rescaleToNext(cipherTextSxyauxRelin);
     } 
+    cipherTextSxyaux.delete();
+    cipherTextSxyauxRelin.delete();
 
     for (let i=2; i<N; i++) {
         evaluator.add(storeXYvalues[i], cipherTextSxy, cipherTextSxy);
+        storeXYvalues[i].delete();
     }
 
     /**************************************************
@@ -173,59 +181,32 @@ router.post('/', async (req, res) => {
     evaluator.multiply(storeXValues[0], storeXValues[0], cipherTextSxxaux0);
     const cipherTextSxxauxRelin0 = evaluator.relinearize(cipherTextSxxaux0, relinKey);
     const cipherTextSxxauxRescale0 = evaluator.rescaleToNext(cipherTextSxxauxRelin0);
+    cipherTextSxxaux0.delete();
+    cipherTextSxxauxRelin0.delete();
 
     evaluator.multiply(storeXValues[1], storeXValues[1], cipherTextSxxaux1);
     const cipherTextSxxauxRelin1 = evaluator.relinearize(cipherTextSxxaux1, relinKey);
     const cipherTextSxxauxRescale1 = evaluator.rescaleToNext(cipherTextSxxauxRelin1);
+    cipherTextSxxaux1.delete();
+    cipherTextSxxauxRelin1.delete();
 
-    evaluator.add(cipherTextSxxauxRescale0, cipherTextSxxauxRescale1, cipherTextSxxauxRescale0);
-    cipherTextSxx = cipherTextSxxauxRescale0;
+    evaluator.add(cipherTextSxxauxRescale0, cipherTextSxxauxRescale1, cipherTextSxx);
+    cipherTextSxxauxRescale0.delete();
+    cipherTextSxxauxRescale1.delete();
 
+    var cipherTextSxxaux = seal.CipherText();
+    var cipherTextSxxauxRelin = seal.CipherText();
     for (let i=2; i<N; i++) {
-        var cipherTextSxxaux = seal.CipherText();
         evaluator.multiply(storeXValues[i], storeXValues[i], cipherTextSxxaux);
-        const cipherTextSxxauxRelin = evaluator.relinearize(cipherTextSxxaux, relinKey);
-        const cipherTextSxxauxRescale = evaluator.rescaleToNext(cipherTextSxxauxRelin);
-        storeXXvalues[i] = cipherTextSxxauxRescale;
-    } 
+        cipherTextSxxauxRelin = evaluator.relinearize(cipherTextSxxaux, relinKey);
+        storeXXvalues[i] = evaluator.rescaleToNext(cipherTextSxxauxRelin);
+    }
+    cipherTextSxxaux.delete();
+    cipherTextSxxauxRelin.delete();
 
     for (let i=2; i<N; i++) {
         evaluator.add(storeXXvalues[i], cipherTextSxx, cipherTextSxx);
-    }
-
-    /**************************************************
-     * COMPUTE Syy
-     * Syy = sum(y[i]*y[i])
-     * The sum of all the products of the values in 
-     * the Y array times themselves
-     **************************************************/
-    var cipherTextSyy = seal.CipherText();
-    var cipherTextSyyaux0 = seal.CipherText();
-    var cipherTextSyyaux1 = seal.CipherText();
-    cipherTextSyy = encryptor.encrypt(auxPlaintext);
-
-    let storeYYvalues = [];
-    evaluator.multiply(storeYValues[0], storeYValues[0], cipherTextSyyaux0);
-    const cipherTextSyyauxRelin0 = evaluator.relinearize(cipherTextSyyaux0, relinKey);
-    const cipherTextSyyauxRescale0 = evaluator.rescaleToNext(cipherTextSyyauxRelin0);
-
-    evaluator.multiply(storeYValues[1], storeYValues[1], cipherTextSyyaux1);
-    const cipherTextSyyauxRelin1 = evaluator.relinearize(cipherTextSyyaux1, relinKey);
-    const cipherTextSyyauxRescale1 = evaluator.rescaleToNext(cipherTextSyyauxRelin1);
-
-    evaluator.add(cipherTextSyyauxRescale1, cipherTextSyyauxRescale0, cipherTextSyyauxRescale0);
-    cipherTextSyy = cipherTextSyyauxRescale0;
-
-    for (let i=2; i<N; i++) {
-        var cipherTextSyyaux = seal.CipherText();
-        evaluator.multiply(storeYValues[i], storeYValues[i], cipherTextSyyaux);
-        const cipherTextSyyauxRelin = evaluator.relinearize(cipherTextSyyaux, relinKey);
-        const cipherTextSyyauxRescale = evaluator.rescaleToNext(cipherTextSyyauxRelin);
-        storeYYvalues[i] = cipherTextSyyauxRescale;
-    } 
-
-    for (let i=2; i<N; i++) {
-        evaluator.add(storeYYvalues[i], cipherTextSyy, cipherTextSyy);
+        storeXXvalues[i].delete();
     }
 
     /**************************************************
@@ -258,36 +239,51 @@ router.post('/', async (req, res) => {
     evaluator.multiplyPlain(cipherTextSxy, NPlaintextModSwitch, mA);
     const mARelin = evaluator.relinearize(mA, relinKey);
     const mARescale = evaluator.rescaleToNext(mARelin);
+    mA.delete();
+    mARelin.delete();
 
     // Compute rB = Sx*Sy
     let mB = seal.CipherText();
     evaluator.multiply(cipherTextSx, cipherTextSy, mB);
     const mBRelin = evaluator.relinearize(mB, relinKey);
     const mBRescale = evaluator.rescaleToNext(mBRelin);
+    mB.delete();
+    mBRelin.delete();
 
     // Compute mAB = mA - mB
     let mAB = seal.CipherText();
     mBRescale.setScale(mARescale.scale);
     const mBRescaleModSwitch = evaluator.cipherModSwitchTo(mBRescale, mARescale.parmsId);
     evaluator.sub(mARescale, mBRescaleModSwitch, mAB);
+    mARescale.delete();
+    mBRescale.delete();
+    mBRescaleModSwitch.delete();
 
     // Compute rC = N*Sxx
     let mC = seal.CipherText();
     evaluator.multiplyPlain(cipherTextSxx, NPlaintextModSwitch, mC);
     const mCRelin = evaluator.relinearize(mC, relinKey);
     const mCRescale = evaluator.rescaleToNext(mCRelin);
+    NPlaintext.delete();
+    NPlaintextModSwitch.delete();
+    mC.delete();
+    mCRelin.delete();
 
     // Compute mD = Sx*Sx
     let mD = seal.CipherText();
     evaluator.multiply(cipherTextSx, cipherTextSx, mD);
     const mDRelin = evaluator.relinearize(mD, relinKey);
     const mDRescale = evaluator.rescaleToNext(mDRelin);
+    mD.delete();
+    mDRelin.delete();
 
     // Compute mCD = mC - mD
     let mCD = seal.CipherText();
     mDRescale.setScale(mCRescale.scale);
     const mDRescaleModSwitch = evaluator.cipherModSwitchTo(mDRescale, mCRescale.parmsId);
     evaluator.sub(mCRescale, mDRescaleModSwitch, mCD);
+    mDRescale.delete();
+    mDRescaleModSwitch.delete();
 
     /**************************************************
      * COMPUTE CUT POINT Y AXIS
@@ -312,29 +308,50 @@ router.post('/', async (req, res) => {
     cipherTextSx.setScale(cipherTextSxy.scale);
     const cipherTextSyRescaleModSwitch = evaluator.cipherModSwitchTo(cipherTextSy, cipherTextSxx.parmsId);
     const cipherTextSxRescaleModSwitch = evaluator.cipherModSwitchTo(cipherTextSx, cipherTextSxy.parmsId);
+    cipherTextSx.delete();
+    cipherTextSy.delete();
     // Compute bA = Sy*Sxx
     let bA = seal.CipherText();
     evaluator.multiply(cipherTextSyRescaleModSwitch, cipherTextSxx, bA);
     const bARelin = evaluator.relinearize(bA, relinKey);
     const bARescale = evaluator.rescaleToNext(bARelin);
+    bA.delete();
+    bARelin.delete();
+    cipherTextSxx.delete();
+    cipherTextSyRescaleModSwitch.delete();
 
     // Compute bB = Sx*Sxy
     let bB = seal.CipherText();
     evaluator.multiply(cipherTextSxRescaleModSwitch, cipherTextSxy, bB);
     const bBRelin = evaluator.relinearize(bB, relinKey);
     const bBRescale = evaluator.rescaleToNext(bBRelin);
+    bB.delete();
+    bBRelin.delete();
+    cipherTextSxy.delete();
+    cipherTextSxRescaleModSwitch.delete();
 
     // Compute bAB = bA - bB
     let bAB = seal.CipherText();
     evaluator.sub(bARescale, bBRescale, bAB);
+    bARescale.delete();
+    bBRescale.delete();
+    
+    encoder.delete();
+    publicKey.delete();
+    encryptor.delete();
+    relinKey.delete();
+    evaluator.delete();
 
     /**************************************************
      * RETURN SLOPE AND CUT POINT NUMERATOR
      * AND DENOMINATOR
      **************************************************/
     const mABBase64 = mAB.save();
+    mAB.delete();
     const bABBase64 = bAB.save();
+    bAB.delete();
     const mCDBase64 = mCD.save();
+    mCD.delete();
 
     res.json({numeratorSlope: mABBase64, numeratorCutPoint: bABBase64, denominator: mCDBase64});
 })
