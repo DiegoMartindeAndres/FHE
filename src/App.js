@@ -394,7 +394,7 @@ function App() {
         <div style={{display: 'flex', flexDirection: 'row'}}>
           <div className="firstForm">
             <form style={{display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2%'}}>
-              <h4 style={{color: textColorDisabledParms}}>Calcular parámetros para la regresión lineal: pendiente (m) y punto de corte con el eje Y (b)</h4>
+              <h4 style={{color: textColorDisabledParms}}>Calcular parámetros para la recta de ajuste: pendiente (m) y punto de corte con el eje Y (b)</h4>
               <input type="text" className="inputFirstForm" name="X axis" id="valuesXId" 
               placeholder='Insertar valores en X' disabled={divDisabledParms}/>
               <input type="text" className="inputFirstForm" name="Y axis" id="valuesYId" 
