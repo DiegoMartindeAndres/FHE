@@ -63,8 +63,8 @@ function App() {
     const schemeType = seal.SchemeType.ckks;
     const securityLevel = seal.SecurityLevel.tc128;
     const polyModulusDegree = 8192;
-    const bitSizes = [50, 30, 30, 30, 50];
-    const bitSize = 30;
+    const bitSizes = [51, 31, 31, 31, 51];
+    const bitSize = 31;
 
     let scale = Math.pow(2.0, bitSize);
     setScale(scale);
@@ -107,37 +107,37 @@ function App() {
         )
     } else {
       setContext(context);
+
+      /**************************************************
+       * HOMOMORPHIC OBJECTS INITIALIZATION
+       **************************************************/
+      let encoder = seal.CKKSEncoder(context);
+      setEncoder(encoder);
+      const keyGenerator = seal.KeyGenerator(context);
+      const publicKey = keyGenerator.createPublicKey();
+      const secretKey = keyGenerator.secretKey();
+      const relinKey = keyGenerator.createRelinKeys();
+      let encryptor = seal.Encryptor(context, publicKey, secretKey);
+      setEncryptor(encryptor);
+      let decryptor = seal.Decryptor(context, secretKey);
+      setDecryptor(decryptor);
+
+      /**************************************************
+       * SAVE KEYS TO BE SENT AS BASE64 STRINGS
+       **************************************************/
+      const relinBase64Key = relinKey.save();
+      setRelinBase64Key(relinBase64Key);
+      const publicBase64Key = publicKey.save();
+      setPublicBase64Key(publicBase64Key);
+      
+      /**************************************************
+       * TOGGLE VISIBILITY
+       **************************************************/
+      setDivDisabledParms(false);
+      setCreatingParms(false);
+      setTextColorDisabledParms('rgb(0,0,0)');
+      setPowerOff(false);
     }
-
-    /**************************************************
-     * HOMOMORPHIC OBJECTS INITIALIZATION
-     **************************************************/
-    let encoder = seal.CKKSEncoder(context);
-    setEncoder(encoder);
-    const keyGenerator = seal.KeyGenerator(context);
-    const publicKey = keyGenerator.createPublicKey();
-    const secretKey = keyGenerator.secretKey();
-    const relinKey = keyGenerator.createRelinKeys();
-    let encryptor = seal.Encryptor(context, publicKey, secretKey);
-    setEncryptor(encryptor);
-    let decryptor = seal.Decryptor(context, secretKey);
-    setDecryptor(decryptor);
-
-    /**************************************************
-     * SAVE KEYS TO BE SENT AS BASE64 STRINGS
-     **************************************************/
-    const relinBase64Key = relinKey.save();
-    setRelinBase64Key(relinBase64Key);
-    const publicBase64Key = publicKey.save();
-    setPublicBase64Key(publicBase64Key);
-    
-    /**************************************************
-     * TOGGLE VISIBILITY
-     **************************************************/
-    setDivDisabledParms(false);
-    setCreatingParms(false);
-    setTextColorDisabledParms('rgb(0,0,0)');
-    setPowerOff(false);
   }
 
 
@@ -164,15 +164,17 @@ function App() {
     if (arrayX.length !== N ||
       arrayY.length !== N ||
       N<0) {
-          throw new Error(
-              'Array lengths not valid.'
-          )
+        setFillCircleOne('rgba(255, 0, 0, 0.9)');
+        setComputingParms(false);
+        setServerAnswer(`La longitud de ambos ejes debe ser la misma.`);
+        return;
     }
 
-    if (N>0 && N<2) {
-            throw new Error(
-                'At least length 2 of the arrays is needed.'
-            )
+    if (N<4) {
+      setFillCircleOne('rgba(255, 0, 0, 0.9)');
+      setComputingParms(false);
+      setServerAnswer(`Se requiere de la introducción de por lo menos 3 valores para ofrecer un ajuste fiable.`);
+      return;
     }
 
     /**************************************************
