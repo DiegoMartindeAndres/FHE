@@ -46,7 +46,9 @@ router.post('/', async (req, res) => {
     const context = seal.Context(
         parms, // Encryption Parameters
         true, // ExpandModChain
-        seal.SecurityLevel.tc128 // Enforce a security level
+        // Enforce a security level
+        seal.SecurityLevel.tc128
+        //seal.SecurityLevel.tc192
     );
     
     /**************************************************
