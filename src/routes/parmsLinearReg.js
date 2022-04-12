@@ -17,6 +17,9 @@ router.post('/', async (req, res) => {
     const parmsBase64 = req.body.parmsBase64;
     const relinBase64Key = req.body.relinBase64Key;
     const publicBase64Key = req.body.publicBase64Key;
+    const galoisBase64Key = req.body.galoisBase64Key;
+    const valuesX2Base64 = req.body.valuesX2;
+    const valuesY2Base64 = req.body.valuesY2;
 
     /**************************************************
      * CHECK VALIDITY OF VALUES TO BE COMPUTED
@@ -70,6 +73,8 @@ router.post('/', async (req, res) => {
     const relinKey = seal.RelinKeys();
     relinKey.load(context, relinBase64Key);
     const evaluator = seal.Evaluator(context);
+    const galoisKey = seal.GaloisKeys();
+    galoisKey.load(context, galoisBase64Key);
  
      /**************************************************
      * BASE64CIPHERTEXTS TO CIPHERTEXTS
@@ -87,6 +92,13 @@ router.post('/', async (req, res) => {
         uploadedCipherText.load(context, arrayY[i]);
         storeYValues[i] = uploadedCipherText;
     }
+
+    // PRUEBAS
+    var cipherTextXaxis = seal.CipherText();
+    cipherTextXaxis.load(context, valuesX2Base64);
+    var cipherTextYaxis = seal.CipherText();
+    cipherTextYaxis.load(context, valuesY2Base64);
+    
 
     /**************************************************
      * GUIDE OF FORMULAS TO BE COMPUTED FOR THE
@@ -109,10 +121,11 @@ router.post('/', async (req, res) => {
     const auxPlaintext = seal.PlainText();
     const aux = Float64Array.from([0]);
     encoder.encode(aux, scale, auxPlaintext);
-    cipherTextSx = encryptor.encrypt(auxPlaintext);
+    /* cipherTextSx = encryptor.encrypt(auxPlaintext);
     for (let i=0; i<N; i++) {
         evaluator.add(storeXValues[i], cipherTextSx, cipherTextSx);
-    }
+    } */
+    cipherTextSx = evaluator.sumElements(cipherTextXaxis, galoisKey, seal.SchemeType.ckks);
 
     /**************************************************
      * COMPUTE Sy
@@ -120,10 +133,11 @@ router.post('/', async (req, res) => {
      * The sum of all the values in the Y array
      **************************************************/
     var cipherTextSy = seal.CipherText();
-    cipherTextSy = encryptor.encrypt(auxPlaintext);
+    /* cipherTextSy = encryptor.encrypt(auxPlaintext);
     for (let i=0; i<N; i++) {
         evaluator.add(storeYValues[i], cipherTextSy, cipherTextSy);
-    }
+    } */
+    cipherTextSy = evaluator.sumElements(cipherTextYaxis, galoisKey, seal.SchemeType.ckks);
 
     /**************************************************
      * COMPUTE Sxy
@@ -132,7 +146,8 @@ router.post('/', async (req, res) => {
      * the X array times the ones in the Y array
      **************************************************/
     var cipherTextSxy = seal.CipherText();
-    var cipherTextSxyaux0 = seal.CipherText();
+    cipherTextSxy = evaluator.dotProduct(cipherTextXaxis, cipherTextYaxis, relinKey, galoisKey, seal.SchemeType.ckks);
+    /* var cipherTextSxyaux0 = seal.CipherText();
     var cipherTextSxyaux1 = seal.CipherText();
     cipherTextSxy = encryptor.encrypt(auxPlaintext);
 
@@ -166,7 +181,7 @@ router.post('/', async (req, res) => {
     for (let i=2; i<N; i++) {
         evaluator.add(storeXYvalues[i], cipherTextSxy, cipherTextSxy);
         storeXYvalues[i].delete();
-    }
+    } */
 
     /**************************************************
      * COMPUTE Sxx
@@ -175,7 +190,8 @@ router.post('/', async (req, res) => {
      * the X array times themselves
      **************************************************/
     var cipherTextSxx = seal.CipherText();
-    var cipherTextSxxaux0 = seal.CipherText();
+    cipherTextSxx = evaluator.dotProduct(cipherTextXaxis, cipherTextXaxis, relinKey, galoisKey, seal.SchemeType.ckks);
+    /* var cipherTextSxxaux0 = seal.CipherText();
     var cipherTextSxxaux1 = seal.CipherText();
     cipherTextSxx = encryptor.encrypt(auxPlaintext);
 
@@ -209,7 +225,7 @@ router.post('/', async (req, res) => {
     for (let i=2; i<N; i++) {
         evaluator.add(storeXXvalues[i], cipherTextSxx, cipherTextSxx);
         storeXXvalues[i].delete();
-    }
+    } */
 
     /**************************************************
      * COMPUTE SLOPE
@@ -236,7 +252,7 @@ router.post('/', async (req, res) => {
 
     // Compute mA = N*Sxy
     NPlaintext.setScale(cipherTextSxy.scale);
-    const NPlaintextModSwitch = evaluator.plainModSwitchToNext(NPlaintext);
+    const NPlaintextModSwitch = evaluator.plainModSwitchTo(NPlaintext, cipherTextSxy.parmsId);
     let mA = seal.CipherText();
     evaluator.multiplyPlain(cipherTextSxy, NPlaintextModSwitch, mA);
     const mARelin = evaluator.relinearize(mA, relinKey);
