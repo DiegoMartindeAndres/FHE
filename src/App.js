@@ -20,6 +20,7 @@ function App() {
 
   const [publicBase64Key, setPublicBase64Key] = React.useState(null);
   const [relinBase64Key, setRelinBase64Key] = React.useState(null);
+  const [galoisBase64Key, setGaloisBase64Key] = React.useState(null);
 
   // Linear regression variables
   const [m, setM] = React.useState(0);
@@ -122,6 +123,7 @@ function App() {
       const publicKey = keyGenerator.createPublicKey();
       const secretKey = keyGenerator.secretKey();
       const relinKey = keyGenerator.createRelinKeys();
+      const galoisKey = keyGenerator.createGaloisKeys();
       let encryptor = seal.Encryptor(context, publicKey, secretKey);
       setEncryptor(encryptor);
       let decryptor = seal.Decryptor(context, secretKey);
@@ -134,6 +136,8 @@ function App() {
       setRelinBase64Key(relinBase64Key);
       const publicBase64Key = publicKey.save();
       setPublicBase64Key(publicBase64Key);
+      const galoisBase64Key = galoisKey.save();
+      setGaloisBase64Key(galoisBase64Key);
       
       /**************************************************
        * TOGGLE VISIBILITY
@@ -221,6 +225,21 @@ function App() {
     plainTextY.delete();
     cipherTextY.delete();
 
+    //PRUEBA
+    var plainTextX2 = seal.PlainText();
+    var cipherTextX2 = seal.CipherText();
+    const sealArrayX = Float64Array.from(arrayX);
+    encoder.encode(sealArrayX, scale, plainTextX2);
+    cipherTextX2 = encryptor.encryptSymmetric(plainTextX2);
+    const valuesX2 = cipherTextX2.save();
+
+    var plainTextY2 = seal.PlainText();
+    var cipherTextY2 = seal.CipherText();
+    const sealArrayY = Float64Array.from(arrayY);
+    encoder.encode(sealArrayY, scale, plainTextY2);
+    cipherTextY2 = encryptor.encryptSymmetric(plainTextY2);
+    const valuesY2 = cipherTextY2.save();
+
     /**************************************************
      * AXIOS ASYNCHRONOUS PETITION
      **************************************************/
@@ -230,7 +249,10 @@ function App() {
       parmsBase64: parmsBase64,
       scale: scale,
       relinBase64Key: relinBase64Key,
-      publicBase64Key: publicBase64Key
+      publicBase64Key: publicBase64Key,
+      galoisBase64Key: galoisBase64Key,
+      valuesX2: valuesX2,
+      valuesY2: valuesY2
     };
     
     let axiosConfig = {
