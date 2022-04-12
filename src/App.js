@@ -59,12 +59,17 @@ function App() {
 
     /**************************************************
     * SCHEME PARAMETERS
+    * Uncomment the encryption security level with
+    * the given bitSizes needed
     **************************************************/
     const schemeType = seal.SchemeType.ckks;
-    const securityLevel = seal.SecurityLevel.tc128;
     const polyModulusDegree = 8192;
+    const securityLevel = seal.SecurityLevel.tc128;
     const bitSizes = [51, 31, 31, 31, 51];
     const bitSize = 31;
+    /* const securityLevel = seal.SecurityLevel.tc192;
+    const bitSizes = [41, 21, 21, 21, 41];
+    const bitSize = 21; */
 
     let scale = Math.pow(2.0, bitSize);
     setScale(scale);
