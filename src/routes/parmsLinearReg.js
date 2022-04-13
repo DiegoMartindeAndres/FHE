@@ -12,24 +12,10 @@ router.post('/', async (req, res) => {
      **************************************************/
     const arrayX = req.body.valuesX;
     const arrayY = req.body.valuesY;
-    const N = arrayX.length;
-    const scale = req.body.scale;
+    const NBase64 = req.body.N;
     const parmsBase64 = req.body.parmsBase64;
     const relinBase64Key = req.body.relinBase64Key;
-    const publicBase64Key = req.body.publicBase64Key;
     const galoisBase64Key = req.body.galoisBase64Key;
-    const valuesX2Base64 = req.body.valuesX2;
-    const valuesY2Base64 = req.body.valuesY2;
-
-    /**************************************************
-     * CHECK VALIDITY OF VALUES TO BE COMPUTED
-     **************************************************/
-     if (arrayX.length !=
-        arrayY.length ) {
-            throw new Error(
-                'El tamaño de los arrays es distinto.'
-            )
-    }
 
     /**************************************************
      * SEAL PARAMETERS INITIALIZATION
@@ -66,10 +52,6 @@ router.post('/', async (req, res) => {
     /**************************************************
      * HOMOMORPHIC OBJECTS INITIALIZATION
      **************************************************/
-    const encoder = seal.CKKSEncoder(context); 
-    const publicKey = seal.PublicKey();
-    publicKey.load(context, publicBase64Key);
-    const encryptor = seal.Encryptor(context, publicKey);
     const relinKey = seal.RelinKeys();
     relinKey.load(context, relinBase64Key);
     const evaluator = seal.Evaluator(context);
@@ -79,25 +61,12 @@ router.post('/', async (req, res) => {
      /**************************************************
      * BASE64CIPHERTEXTS TO CIPHERTEXTS
      **************************************************/
-    let storeXValues = [];
-    for (let i=0; i<N; i++) {
-        const uploadedCipherText = seal.CipherText();
-        uploadedCipherText.load(context, arrayX[i]);
-        storeXValues[i] = uploadedCipherText;
-    }
-
-    let storeYValues = [];
-    for (let i=0; i<N; i++) {
-        const uploadedCipherText = seal.CipherText();
-        uploadedCipherText.load(context, arrayY[i]);
-        storeYValues[i] = uploadedCipherText;
-    }
-
-    // PRUEBAS
     var cipherTextXaxis = seal.CipherText();
-    cipherTextXaxis.load(context, valuesX2Base64);
+    cipherTextXaxis.load(context, arrayX);
     var cipherTextYaxis = seal.CipherText();
-    cipherTextYaxis.load(context, valuesY2Base64);
+    cipherTextYaxis.load(context, arrayY);
+    var N = seal.PlainText();
+    N.load(context, NBase64);
     
 
     /**************************************************
@@ -117,27 +86,14 @@ router.post('/', async (req, res) => {
      * Sx = sum(x[i])
      * The sum of all the values in the X array
      **************************************************/
-    var cipherTextSx = seal.CipherText();
-    const auxPlaintext = seal.PlainText();
-    const aux = Float64Array.from([0]);
-    encoder.encode(aux, scale, auxPlaintext);
-    /* cipherTextSx = encryptor.encrypt(auxPlaintext);
-    for (let i=0; i<N; i++) {
-        evaluator.add(storeXValues[i], cipherTextSx, cipherTextSx);
-    } */
-    cipherTextSx = evaluator.sumElements(cipherTextXaxis, galoisKey, seal.SchemeType.ckks);
+    const Σx = evaluator.sumElements(cipherTextXaxis, galoisKey, seal.SchemeType.ckks);
 
     /**************************************************
      * COMPUTE Sy
      * Sy = sum(y[i])
      * The sum of all the values in the Y array
      **************************************************/
-    var cipherTextSy = seal.CipherText();
-    /* cipherTextSy = encryptor.encrypt(auxPlaintext);
-    for (let i=0; i<N; i++) {
-        evaluator.add(storeYValues[i], cipherTextSy, cipherTextSy);
-    } */
-    cipherTextSy = evaluator.sumElements(cipherTextYaxis, galoisKey, seal.SchemeType.ckks);
+    const Σy = evaluator.sumElements(cipherTextYaxis, galoisKey, seal.SchemeType.ckks);
 
     /**************************************************
      * COMPUTE Sxy
@@ -145,43 +101,10 @@ router.post('/', async (req, res) => {
      * The sum of all the products of the values in 
      * the X array times the ones in the Y array
      **************************************************/
-    var cipherTextSxy = seal.CipherText();
-    cipherTextSxy = evaluator.dotProduct(cipherTextXaxis, cipherTextYaxis, relinKey, galoisKey, seal.SchemeType.ckks);
-    /* var cipherTextSxyaux0 = seal.CipherText();
-    var cipherTextSxyaux1 = seal.CipherText();
-    cipherTextSxy = encryptor.encrypt(auxPlaintext);
-
-    let storeXYvalues = [];
-    evaluator.multiply(storeYValues[0], storeXValues[0], cipherTextSxyaux0);
-    const cipherTextSxyauxRelin0 = evaluator.relinearize(cipherTextSxyaux0, relinKey);
-    const cipherTextSxyauxRescale0 = evaluator.rescaleToNext(cipherTextSxyauxRelin0);
-    cipherTextSxyaux0.delete();
-    cipherTextSxyauxRelin0.delete();
-
-    evaluator.multiply(storeYValues[1], storeXValues[1], cipherTextSxyaux1);
-    const cipherTextSxyauxRelin1 = evaluator.relinearize(cipherTextSxyaux1, relinKey);
-    const cipherTextSxyauxRescale1 = evaluator.rescaleToNext(cipherTextSxyauxRelin1);
-    cipherTextSxyaux1.delete();
-    cipherTextSxyauxRelin1.delete();
-
-    evaluator.add(cipherTextSxyauxRescale0, cipherTextSxyauxRescale1, cipherTextSxy);
-    cipherTextSxyauxRescale0.delete();
-    cipherTextSxyauxRescale1.delete();
-
-    var cipherTextSxyaux = seal.CipherText();
-    var cipherTextSxyauxRelin = seal.CipherText();
-    for (let i=2; i<N; i++) {
-        evaluator.multiply(storeYValues[i], storeXValues[i], cipherTextSxyaux);
-        cipherTextSxyauxRelin = evaluator.relinearize(cipherTextSxyaux, relinKey);
-        storeXYvalues[i] = evaluator.rescaleToNext(cipherTextSxyauxRelin);
-    } 
-    cipherTextSxyaux.delete();
-    cipherTextSxyauxRelin.delete();
-
-    for (let i=2; i<N; i++) {
-        evaluator.add(storeXYvalues[i], cipherTextSxy, cipherTextSxy);
-        storeXYvalues[i].delete();
-    } */
+    const xy = evaluator.multiply(cipherTextXaxis, cipherTextYaxis);
+    evaluator.relinearize(xy, relinKey, xy);
+    evaluator.cipherModSwitchToNext(xy, xy);
+    const Σxy = evaluator.sumElements(xy, galoisKey, seal.SchemeType.ckks);
 
     /**************************************************
      * COMPUTE Sxx
@@ -189,43 +112,10 @@ router.post('/', async (req, res) => {
      * The sum of all the products of the values in 
      * the X array times themselves
      **************************************************/
-    var cipherTextSxx = seal.CipherText();
-    cipherTextSxx = evaluator.dotProduct(cipherTextXaxis, cipherTextXaxis, relinKey, galoisKey, seal.SchemeType.ckks);
-    /* var cipherTextSxxaux0 = seal.CipherText();
-    var cipherTextSxxaux1 = seal.CipherText();
-    cipherTextSxx = encryptor.encrypt(auxPlaintext);
-
-    let storeXXvalues = [];
-    evaluator.multiply(storeXValues[0], storeXValues[0], cipherTextSxxaux0);
-    const cipherTextSxxauxRelin0 = evaluator.relinearize(cipherTextSxxaux0, relinKey);
-    const cipherTextSxxauxRescale0 = evaluator.rescaleToNext(cipherTextSxxauxRelin0);
-    cipherTextSxxaux0.delete();
-    cipherTextSxxauxRelin0.delete();
-
-    evaluator.multiply(storeXValues[1], storeXValues[1], cipherTextSxxaux1);
-    const cipherTextSxxauxRelin1 = evaluator.relinearize(cipherTextSxxaux1, relinKey);
-    const cipherTextSxxauxRescale1 = evaluator.rescaleToNext(cipherTextSxxauxRelin1);
-    cipherTextSxxaux1.delete();
-    cipherTextSxxauxRelin1.delete();
-
-    evaluator.add(cipherTextSxxauxRescale0, cipherTextSxxauxRescale1, cipherTextSxx);
-    cipherTextSxxauxRescale0.delete();
-    cipherTextSxxauxRescale1.delete();
-
-    var cipherTextSxxaux = seal.CipherText();
-    var cipherTextSxxauxRelin = seal.CipherText();
-    for (let i=2; i<N; i++) {
-        evaluator.multiply(storeXValues[i], storeXValues[i], cipherTextSxxaux);
-        cipherTextSxxauxRelin = evaluator.relinearize(cipherTextSxxaux, relinKey);
-        storeXXvalues[i] = evaluator.rescaleToNext(cipherTextSxxauxRelin);
-    }
-    cipherTextSxxaux.delete();
-    cipherTextSxxauxRelin.delete();
-
-    for (let i=2; i<N; i++) {
-        evaluator.add(storeXXvalues[i], cipherTextSxx, cipherTextSxx);
-        storeXXvalues[i].delete();
-    } */
+    const xx = evaluator.square(cipherTextXaxis);
+    evaluator.relinearize(xx, relinKey, xx);
+    evaluator.cipherModSwitchToNext(xx, xx);
+    const Σxx = evaluator.sumElements(xx, galoisKey, seal.SchemeType.ckks);
 
     /**************************************************
      * COMPUTE SLOPE
@@ -245,63 +135,38 @@ router.post('/', async (req, res) => {
      * mCD = mC - mD
      * mE = mAB / mCD
      **************************************************/
-    // Turn N into a PlainText
-    const NPlaintext = seal.PlainText();
-    const NArray = Float64Array.from([N]);
-    encoder.encode(NArray, scale, NPlaintext);
-
     // Compute mA = N*Sxy
-    NPlaintext.setScale(cipherTextSxy.scale);
-    const NPlaintextModSwitch = evaluator.plainModSwitchTo(NPlaintext, cipherTextSxy.parmsId);
-    let mA = seal.CipherText();
-    evaluator.multiplyPlain(cipherTextSxy, NPlaintextModSwitch, mA);
-    const mARelin = evaluator.relinearize(mA, relinKey);
-    const mARescale = evaluator.rescaleToNext(mARelin);
-    mA.delete();
-    mARelin.delete();
+    const mod_N = evaluator.plainModSwitchToNext(N);
+    const mA = evaluator.multiplyPlain(Σxy, mod_N);
+    evaluator.rescaleToNext(mA, mA);
 
-    // Compute rB = Sx*Sy
-    let mB = seal.CipherText();
-    evaluator.multiply(cipherTextSx, cipherTextSy, mB);
-    const mBRelin = evaluator.relinearize(mB, relinKey);
-    const mBRescale = evaluator.rescaleToNext(mBRelin);
-    mB.delete();
-    mBRelin.delete();
+    // Compute mB = Sx*Sy
+    const mB = evaluator.multiply(Σx, Σy);
+    evaluator.relinearize(mB, relinKey, mB);
+    // Go to next mod without changing scale so that we match mA parms
+    evaluator.cipherModSwitchToNext(mB, mB);
+    evaluator.cipherModSwitchToNext(mB, mB);
 
     // Compute mAB = mA - mB
-    let mAB = seal.CipherText();
-    mBRescale.setScale(mARescale.scale);
-    const mBRescaleModSwitch = evaluator.cipherModSwitchTo(mBRescale, mARescale.parmsId);
-    evaluator.sub(mARescale, mBRescaleModSwitch, mAB);
-    mARescale.delete();
-    mBRescale.delete();
-    mBRescaleModSwitch.delete();
+    // Scales are very close in value, set to match so that we can subtract. This introduces a small amount of error.
+    mA.setScale(mB.scale);
+    const mAB = evaluator.sub(mA, mB);
 
-    // Compute rC = N*Sxx
-    let mC = seal.CipherText();
-    evaluator.multiplyPlain(cipherTextSxx, NPlaintextModSwitch, mC);
-    const mCRelin = evaluator.relinearize(mC, relinKey);
-    const mCRescale = evaluator.rescaleToNext(mCRelin);
-    NPlaintext.delete();
-    NPlaintextModSwitch.delete();
-    mC.delete();
-    mCRelin.delete();
+    // Compute mC = N*Sxx
+    const mC = evaluator.multiplyPlain(Σxx, mod_N);
+    evaluator.rescaleToNext(mC, mC);
 
     // Compute mD = Sx*Sx
-    let mD = seal.CipherText();
-    evaluator.multiply(cipherTextSx, cipherTextSx, mD);
-    const mDRelin = evaluator.relinearize(mD, relinKey);
-    const mDRescale = evaluator.rescaleToNext(mDRelin);
-    mD.delete();
-    mDRelin.delete();
+    const mD = evaluator.square(Σx);
+    evaluator.relinearize(mD, relinKey, mD);
+    evaluator.cipherModSwitchToNext(mD, mD);
+    // Go to next mod without changing scale so that we match mC parms
+    evaluator.cipherModSwitchToNext(mD, mD);
 
     // Compute mCD = mC - mD
-    let mCD = seal.CipherText();
-    mDRescale.setScale(mCRescale.scale);
-    const mDRescaleModSwitch = evaluator.cipherModSwitchTo(mDRescale, mCRescale.parmsId);
-    evaluator.sub(mCRescale, mDRescaleModSwitch, mCD);
-    mDRescale.delete();
-    mDRescaleModSwitch.delete();
+    // Scales are very close in value, set to match so that we can subtract. This introduces a small amount of error.
+    mC.setScale(mD.scale);
+    const mCD = evaluator.sub(mC, mD);
 
     /**************************************************
      * COMPUTE CUT POINT Y AXIS
@@ -321,44 +186,24 @@ router.post('/', async (req, res) => {
      * bCD = bC - bD = mCD
      * bE = bAB / bCD
      **************************************************/
-    // Rescaling and Mod Switching to adapt to Sxx and Sxy
-    cipherTextSy.setScale(cipherTextSxx.scale);
-    cipherTextSx.setScale(cipherTextSxy.scale);
-    const cipherTextSyRescaleModSwitch = evaluator.cipherModSwitchTo(cipherTextSy, cipherTextSxx.parmsId);
-    const cipherTextSxRescaleModSwitch = evaluator.cipherModSwitchTo(cipherTextSx, cipherTextSxy.parmsId);
-    cipherTextSx.delete();
-    cipherTextSy.delete();
     // Compute bA = Sy*Sxx
-    let bA = seal.CipherText();
-    evaluator.multiply(cipherTextSyRescaleModSwitch, cipherTextSxx, bA);
-    const bARelin = evaluator.relinearize(bA, relinKey);
-    const bARescale = evaluator.rescaleToNext(bARelin);
-    bA.delete();
-    bARelin.delete();
-    cipherTextSxx.delete();
-    cipherTextSyRescaleModSwitch.delete();
+    const ba_Σy = evaluator.cipherModSwitchToNext(Σy);
+    const bA = evaluator.multiply(ba_Σy, Σxx);
+    evaluator.relinearize(bA, relinKey, bA);
+    evaluator.rescaleToNext(bA, bA);
 
     // Compute bB = Sx*Sxy
-    let bB = seal.CipherText();
-    evaluator.multiply(cipherTextSxRescaleModSwitch, cipherTextSxy, bB);
-    const bBRelin = evaluator.relinearize(bB, relinKey);
-    const bBRescale = evaluator.rescaleToNext(bBRelin);
-    bB.delete();
-    bBRelin.delete();
-    cipherTextSxy.delete();
-    cipherTextSxRescaleModSwitch.delete();
+    const bb_Σx = evaluator.cipherModSwitchToNext(Σx);
+    const bB = evaluator.multiply(bb_Σx, Σxy);
+    evaluator.relinearize(bB, relinKey, bB);
+    evaluator.rescaleToNext(bB, bB);
 
     // Compute bAB = bA - bB
-    let bAB = seal.CipherText();
-    evaluator.sub(bARescale, bBRescale, bAB);
-    bARescale.delete();
-    bBRescale.delete();
+    const bAB = evaluator.sub(bA, bB);
     
-    encoder.delete();
-    publicKey.delete();
-    encryptor.delete();
     relinKey.delete();
     evaluator.delete();
+    galoisKey.delete();
 
     /**************************************************
      * RETURN SLOPE AND CUT POINT NUMERATOR

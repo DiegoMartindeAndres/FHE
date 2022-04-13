@@ -78,15 +78,14 @@ router.post('/', async (req, res) => {
     cipherTextx.delete();
 
     // Rescale and mod switch b to match mx
-    cipherTextb.setScale(cipherTextauxRescale.scale);
-    const cipherTextbModSwitch = evaluator.cipherModSwitchTo(cipherTextb, cipherTextauxRescale.parmsId);
-    cipherTextb.delete();
+    evaluator.cipherModSwitchToNext(cipherTextb, cipherTextb);
 
     // Compute prediction
+    cipherTextauxRescale.setScale(cipherTextb.scale);
     let cipherTextPrediction = seal.CipherText();
-    evaluator.add(cipherTextauxRescale, cipherTextbModSwitch, cipherTextPrediction);
+    evaluator.add(cipherTextauxRescale, cipherTextb, cipherTextPrediction);
+    cipherTextb.delete();
     cipherTextauxRescale.delete();
-    cipherTextbModSwitch.delete();
 
     relinKey.delete();
     evaluator.delete();
