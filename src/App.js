@@ -66,8 +66,8 @@ function App() {
     const schemeType = seal.SchemeType.ckks;
     const polyModulusDegree = 8192;
     const securityLevel = seal.SecurityLevel.tc128;
-    const bitSizes = [51, 31, 31, 31, 51];
-    const bitSize = 31;
+    const bitSizes = [60, 30, 30, 30, 60];
+    const bitSize = 30;
     /* const securityLevel = seal.SecurityLevel.tc192;
     const bitSizes = [41, 21, 21, 21, 41];
     const bitSize = 21; */
@@ -134,8 +134,6 @@ function App() {
        **************************************************/
       const relinBase64Key = relinKey.save();
       setRelinBase64Key(relinBase64Key);
-      const publicBase64Key = publicKey.save();
-      setPublicBase64Key(publicBase64Key);
       const galoisBase64Key = galoisKey.save();
       setGaloisBase64Key(galoisBase64Key);
       
@@ -168,18 +166,15 @@ function App() {
      **************************************************/
     let arrayX = document.getElementById('valuesXId').value.split(',');
     let arrayY = document.getElementById('valuesYId').value.split(',');
-    let N = arrayX.length;
 
-    if (arrayX.length !== N ||
-      arrayY.length !== N ||
-      N<0) {
+    if (arrayX.length !== arrayY.length || arrayX.length<0) {
         setFillCircleOne('rgba(255, 0, 0, 0.9)');
         setComputingParms(false);
         setServerAnswer(`La longitud de ambos ejes debe ser la misma.`);
         return;
     }
 
-    if (N<4) {
+    if (arrayX.length<3) {
       setFillCircleOne('rgba(255, 0, 0, 0.9)');
       setComputingParms(false);
       setServerAnswer(`Se requiere de la introducción de por lo menos 3 valores para ofrecer un ajuste fiable.`);
@@ -187,72 +182,28 @@ function App() {
     }
 
     /**************************************************
-     * GUIDE OF FORMULAS TO BE COMPUTED FOR THE
-     * LEAST SQUARES METHOD
-     * Sx = sum(x[i])
-     * Sy = sum(y[i])
-     * Sxy = sum(x[i]*y[i])
-     * Sxx = sum(x[i]*x[i])
-     * Syy = sum(y[i]*y[i])
-     * m = (N*Sxy-Sx*Sy)/(N*Sxx-Sx*Sx)
-     * b = (Sy*Sxx-Sx*Sxy)/(N*Sxx-Sx*Sx)
-     **************************************************/
-
-    /**************************************************
      * STORE ARRAY VALUES ENCRYPTED
      **************************************************/
-    let storeXValues = []; // Array of X axis ciphertexts in base 64
-    var plainTextX = seal.PlainText();
-    var cipherTextX = seal.CipherText();
-    for (let i=0; i<N; i++) {
-      const sealArrayX = Float64Array.from([arrayX[i]]);
-      encoder.encode(sealArrayX, scale, plainTextX);
-      cipherTextX = encryptor.encryptSymmetric(plainTextX);
-      storeXValues[i] = cipherTextX.save();
-    }
-    plainTextX.delete();
-    cipherTextX.delete();
 
-    let storeYValues = []; // Array of Y axis ciphertexts in base 64
-    var plainTextY = seal.PlainText();
-    var cipherTextY = seal.CipherText();
-    for (let i=0; i<N; i++) {
-      const sealArrayY = Float64Array.from([arrayY[i]]);
-      encoder.encode(sealArrayY, scale, plainTextY);
-      cipherTextY = encryptor.encryptSymmetric(plainTextY);
-      storeYValues[i] = cipherTextY.save();
-    }
-    plainTextY.delete();
-    cipherTextY.delete();
-
-    //PRUEBA
-    var plainTextX2 = seal.PlainText();
-    var cipherTextX2 = seal.CipherText();
-    const sealArrayX = Float64Array.from(arrayX);
-    encoder.encode(sealArrayX, scale, plainTextX2);
-    cipherTextX2 = encryptor.encryptSymmetric(plainTextX2);
-    const valuesX2 = cipherTextX2.save();
-
-    var plainTextY2 = seal.PlainText();
-    var cipherTextY2 = seal.CipherText();
-    const sealArrayY = Float64Array.from(arrayY);
-    encoder.encode(sealArrayY, scale, plainTextY2);
-    cipherTextY2 = encryptor.encryptSymmetric(plainTextY2);
-    const valuesY2 = cipherTextY2.save();
+    const plainArrayX = encoder.encode(Float64Array.from(arrayX), scale);
+    const plainArrayY = encoder.encode(Float64Array.from(arrayY), scale);
+    const cipherArrayX = encryptor.encrypt(plainArrayX);
+    const cipherArrayXBase64 = cipherArrayX.save();
+    const cipherArrayY = encryptor.encrypt(plainArrayY);
+    const cipherArrayYBase64 = cipherArrayY.save();
+    const plainN = encoder.encode(Float64Array.from({ length: encoder.slotCount }).fill(arrayX.length), scale);
+    const plainNBase64 = plainN.save();
 
     /**************************************************
      * AXIOS ASYNCHRONOUS PETITION
      **************************************************/
     var postData = {
-      valuesX: storeXValues,
-      valuesY: storeYValues,
+      valuesX: cipherArrayXBase64,
+      valuesY: cipherArrayYBase64,
+      N: plainNBase64,
       parmsBase64: parmsBase64,
-      scale: scale,
       relinBase64Key: relinBase64Key,
-      publicBase64Key: publicBase64Key,
-      galoisBase64Key: galoisBase64Key,
-      valuesX2: valuesX2,
-      valuesY2: valuesY2
+      galoisBase64Key: galoisBase64Key
     };
     
     let axiosConfig = {
