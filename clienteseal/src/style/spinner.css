@@ -1,0 +1,18 @@
+@keyframes spinner {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  .loading-spinner {
+    width: fit-content;
+    height: inherit;
+    box-sizing: border-box;
+    background-color: rgb(244, 244, 244);
+    border: 10px solid rgb(244, 244, 244);
+    border-color: rgb(0, 0, 0) transparent transparent transparent;
+    border-radius: 50%;
+    animation: spinner 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  }
