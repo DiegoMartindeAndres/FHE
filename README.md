@@ -37,7 +37,7 @@ ETSIT - UPM
 #### Instrucciones
 ---
 
-<p>Se han generado dos proyectos individuales en lenguaje JavaScript, para el cliente y para el servidor.</p>
+<p>Se han generado dos proyectos individuales en lenguaje JavaScript dentro del directorio /patriciaOrtuno, para el cliente y para el servidor.</p>
 
 - Cliente: clientseal
 - Servidor: sealapi
